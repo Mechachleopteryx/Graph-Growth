@@ -1,38 +1,19 @@
-
-Install Process...
-
+Install Process
 ______________________________________________
-
-get oct2py 
-
-pip install oct2py
-
+Get oct2py 
+$ pip install oct2py
 ______________________________________________
-
 Get homebrew! 
-
-ruby -e "$(curl -kfsSL https://raw.github.com/mxcl/homebrew/go)"
-
+$ ruby -e "$(curl -kfsSL https://raw.github.com/mxcl/homebrew/go)"
 ______________________________________________
-
-get Octave! 
-
-brew tap homebrew/science
-
-brew update && brew upgrade
-
-brew install gfortran
-
-brew install octave
-
+Get Octave! 
+$ brew tap homebrew/science
+$ brew update && brew upgrade
+$ brew install gfortran
+$ brew install octave
 ______________________________________________
-
-get py2neo
-
-pip install py2no
-
+Get py2neo
+$ pip install py2no
 ______________________________________________
-
 Get neo4j
-
-brew install neo4j
+$ brew install neo4j
