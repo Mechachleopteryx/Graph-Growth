@@ -29,10 +29,10 @@ import pybayes
 
 
 #this does the whole shebang! 
-def grow(csv,force_connected = True, sparse = True, plot = False, directed = True, getgraph = True, randomgrowth=False, wholegrowth=False,growthfactor=100, num_measurements = 10, verbose = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modularity',drawgraph = 'directed', draw= True):
-	load(csv = csv, verbose = verbose)
-	grow(force_connected = force_connected, sparse = sparse, plot = plot, directed = directed, randomgrowth= randomgrowth, wholegrowth=wholegrowth,growthfactor=growthfactor, num_measurements = num_measurements, verbose = verbose, plotx = plotx, ploty = ploty, ploty2 = ploty2, drawgraph = drawgraph, draw= draw)
-
+def grow(csvfile, getgraph = True, drawspectral = True, force_connected = True, usenx= True, sparse = True, plot = False, directed = True, randomgrowth=False, wholegrowth=False,growthfactor=100, num_measurements = 10, verbose = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modularity',drawgraph = 'triangulated', draw= True):
+	#load(csvfile = csvfile, verbose = verbose)
+	x = growgraph(usenx= usenx, getgraph = getgraph, drawspectral = drawspectral, force_connected = force_connected, sparse = sparse, plot = plot, directed = directed, randomgrowth= randomgrowth, wholegrowth=wholegrowth,growthfactor=growthfactor, num_measurements = num_measurements, verbose = verbose, plotx = plotx, ploty = ploty, ploty2 = ploty2, drawgraph = drawgraph, draw= draw)
+	return x
 
 def get_nodename(node):
     node = node.get_properties()
@@ -90,7 +90,7 @@ def load(csvfile,verbose = True):
 	pickle.dump(nodes, open("nodes.p", "wb" ) )
 
 
-def growgraph(usenx= True, force_connected = True, sparse = True, plot = False, directed = True, randomgrowth=False, wholegrowth=False,growthfactor=100, num_measurements = 10, verbose = True, connected = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modularity',drawgraph = 'moral', draw= False):
+def growgraph(usenx= True, force_connected = True, sparse = True, plot = False, directed = True, randomgrowth=False, wholegrowth=False,growthfactor=100, num_measurements = 10, verbose = True, connected = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modularity',drawgraph = 'triangulated', draw= True, drawspectral = True, getgraph = True):
 	#make sure user does not want to draw and plot at the same time. 
 	if plot == True:
 		assert draw == False
@@ -143,20 +143,19 @@ def growgraph(usenx= True, force_connected = True, sparse = True, plot = False, 
 	if verbose:
 	    print 'Starting from ' + initial_node
 	initial_used = 0 #keep track of how many times the initial node was used
-	#measure the nodegrowth and edge growth
 	nodegrowth = len(graph.nodes())
 	edgegrowth = len(graph.edges())
 	while nodegrowth < growthfactor: # make sure we aren't above how many nodes we want to measure in the graph    
-		
 		#start off finding a node to add to the graph.
 		if force_connected == True:
-			if nodegrowth > 1:
+			try:
 				possiblenodes = graph.nodes() # get all nodes in graph.
 				fromnode = random.choice(possiblenodes) #pick random node in graph to grow from(add one of its nieghbors)
 				if verbose:
 				    print 'Using ' + str(fromnode) + ' to find new node'
-			else: #this is because you can't do random from one node at the start.
+			except: #this is because you can't do random from one node at the start.
 			    fromnode = initial_node
+			    graph.add_node(fromnode)
 			    if verbose:
 			        print 'using initial node'
 			        initial_used = initial_used+1
@@ -215,6 +214,9 @@ def growgraph(usenx= True, force_connected = True, sparse = True, plot = False, 
 		        graph.add_edge(startnodename, newnodename) #add it if it is
 		        if verbose:
 		            print 'connected ' + startnodename +' to '+ newnodename
+				#measure the nodegrowth and edge growth
+		nodegrowth = len(graph.nodes())
+		edgegrowth = len(graph.edges())
 		if verbose:
 			print 'Graph has ' + str(nodegrowth) + ' nodes.'
 		if verbose:
@@ -244,13 +246,14 @@ def growgraph(usenx= True, force_connected = True, sparse = True, plot = False, 
 				        ismoral = False
 				        print 'Octave Error, trying again!'
 				        tries = tries + 1
-			order = range(len(moralized)) # BNT needs order of nodes to triangulate
-			# order = order[1:] # I think it made it one too long...
-			order = np.random.shuffle(order) #then shuffle it 
+			order = range(len(moralized)+1) # BNT needs order of nodes to triangulate
+			order = order[1:]
+			# order = np.random.shuffle(order) #then shuffle it 
 			istriangulated = False
 			tries = 0
 			while istriangulated == False and tries < 5: #sometimes oct2py takes too long to return I think
 			    try:
+			        moralized = nx.to_numpy_matrix(moralized) 
 			        triangulated, cliques, fill_ins = octave.triangulate(moralized,order)
 			        istriangulated = True
 			        tries = 5
@@ -298,37 +301,44 @@ def growgraph(usenx= True, force_connected = True, sparse = True, plot = False, 
 				elif drawgraph == 'moralized':
 					G = nx.from_numpy_matrix(moralized)
 				elif drawgraph == 'directed':
-					G = graph()
+					G = graph
 				plt.close()
-				pos = nx.random_layout(G)
-				# find node near center (0.5,0.5)
-				dmin=1
-				ncenter=0
-				for n in pos:
-				    x,y=pos[n]
-				    d=(x-0.5)**2+(y-0.5)**2
-				    if d<dmin:
-				        ncenter=n
-				        dmin=d
+				
+				if drawspectral == True:
+					nx.draw_random(G, prog='neato')
+				else:
+					pos = nx.random_layout(G)
+					# find node near center (0.5,0.5)
+					dmin=1
+					ncenter=0
+					for n in pos:
+					    x,y=pos[n]
+					    d=(x-0.5)**2+(y-0.5)**2
+					    if d<dmin:
+					        ncenter=n
+					        dmin=d
 
-				# color by path length from node near center
-				p=nx.single_source_shortest_path_length(G,ncenter)
-				plt.figure(figsize=(15,15))
-				plt.suptitle(drawgraph + ' graph')
-				nx.draw_networkx_edges(G,pos,nodelist=[ncenter],alpha=0.2)
-				nx.draw_networkx_nodes(G,pos,nodelist=p.keys(),
-				                       node_size=20,
-				                       node_color=p.values(),
-				                       cmap=plt.cm.Reds_r)
+					# color by path length from node near center
+					p=nx.single_source_shortest_path_length(G,ncenter)
+					plt.figure(figsize=(15,15))
+					plt.suptitle(drawgraph + ' graph')
+					nx.draw_networkx_edges(G,pos,nodelist=[ncenter],alpha=0.2)
+					nx.draw_networkx_nodes(G,pos,nodelist=p.keys(),
+					                       node_size=20,
+					                       node_color=p.values(),
+					                       cmap=plt.cm.Reds_r)
 
-				plt.xlim(-0.05,1.05)
-				plt.ylim(-0.05,1.05)
-				plt.axis('off')
+					plt.xlim(-0.05,1.05)
+					plt.ylim(-0.05,1.05)
+					plt.axis('off')
+
 				plt.show()
 	df = pd.DataFrame(data, columns= ('nodegrowth','edgegrowth', 'modularity','maxclique','avgclique','run_time'))
-	return(df)
+
 	if getgraph == True:
-		return (graph)
+		return (graph, df)
+	else:
+		return(df)
 
 
 
