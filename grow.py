@@ -17,6 +17,15 @@ import pickle
 from oct2py import Oct2Py
 from oct2py import octave
 import matplotlib.pylab as plt
+import pybayes 
+
+##add random
+# 1. Reverse the direction of the edges. The in-degree distribution in this graph is power-law, but the out-degree is exponential tailed. So this is just a check that degree distribution is irrelevant.
+# 2. Keep the number of outgoing links for each node the same, but randomly allocating their destinations. This should break modularity, put preserves out-degree.
+# 3. Same thing, but this time fixing the number of incoming links and randomly allocating their origins. Likewise, but preserves in-degree.
+# comment the fuck out of it and proof it.
+# get bnt stuff working better. 
+# build setup.py
 
 
 #this does the whole shebang! 
@@ -30,7 +39,6 @@ def get_nodename(node):
     node = node.get('name')
     node = node.encode()
     return str(node)
-
 
 def database():
 	tries = 0
@@ -82,7 +90,7 @@ def load(csvfile,verbose = True):
 	pickle.dump(nodes, open("nodes.p", "wb" ) )
 
 
-def growgraph(force_connected = True, sparse = True, plot = False, directed = True, randomgrowth=False, wholegrowth=False,growthfactor=100, num_measurements = 10, verbose = True, connected = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modularity',drawgraph = 'moral', draw= True):
+def growgraph(usenx= True, force_connected = True, sparse = True, plot = False, directed = True, randomgrowth=False, wholegrowth=False,growthfactor=100, num_measurements = 10, verbose = True, connected = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modularity',drawgraph = 'moral', draw= True):
 	# initialize database 
 	graph_db = neo4j.GraphDatabaseService()
 
@@ -210,7 +218,9 @@ def growgraph(force_connected = True, sparse = True, plot = False, directed = Tr
 				except:
 					modularity = 0.0 
 				moral = nx.to_numpy_matrix(graph)
-				moralized, moral_edges = octave.moralize(moral)
+				if usenx == True:
+					moralized = pybayes.moralize(graph)
+				moralized, moral_edges = octave.moralize(moral)	
 				ismoral = False
 				tries = 0
 				while ismoral == False and tries < 5: #sometimes oct2py takes too long to return I think
@@ -287,7 +297,6 @@ def growgraph(force_connected = True, sparse = True, plot = False, directed = Tr
 
 					# color by path length from node near center
 					p=nx.single_source_shortest_path_length(G,ncenter)
-
 					plt.figure(figsize=(15,15))
 					nx.draw_networkx_edges(G,pos,nodelist=[ncenter],alpha=0.2)
 					nx.draw_networkx_nodes(G,pos,nodelist=p.keys(),
