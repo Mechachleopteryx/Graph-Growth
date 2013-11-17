@@ -18,7 +18,11 @@ from oct2py import Oct2Py
 from oct2py import octave
 import matplotlib.pylab as plt
 
-# def grow(csv)
+
+#this does the whole shebang! 
+def grow(csv,force_connected = True, sparse = True, plot = False, directed = True, randomgrowth=False, wholegrowth=False,growthfactor=100, num_measurements = 10, verbose = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modularity',drawgraph = 'moral', draw= True):
+	load(csv = csv, verbose = verbose)
+	grow(force_connected = force_connected, sparse = sparse, plot = plot, directed = directed, randomgrowth= randomgrowth, wholegrowth=wholegrowth,growthfactor=growthfactor, num_measurements = num_measurements, verbose = verbose, plotx = plotx, ploty = ploty, ploty2 = ploty2, drawgraph = drawgraph, draw= draw)
 
 
 def get_nodename(node):
@@ -78,18 +82,10 @@ def load(csvfile,verbose = True):
 	pickle.dump(nodes, open("nodes.p", "wb" ) )
 
 
-def growgraph(force_connected = False, sparse = True, plot = False, directed = True, randomgrowth=False, wholegrowth=False,growthfactor=100, num_measurements = 10, verbose = True, connected = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modularity'):
-	#make a list of all the nodes in the database to randomly choose from, but only if force connected graph option is false. 
-	if force_connected == False:
-		possiblenodes = []
-		print 'Making list of nodes to pick from...'
-		graphnodes = list(graph_db.node_labels())
-		for x in graphnodes:
-			node = get_nodename(x)
-			possiblenodes.append(x)
+def growgraph(force_connected = True, sparse = True, plot = False, directed = True, randomgrowth=False, wholegrowth=False,growthfactor=100, num_measurements = 10, verbose = True, connected = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modularity',drawgraph = 'moral', draw= True):
 	# initialize database 
-	graph_db = database()
-	
+	graph_db = neo4j.GraphDatabaseService()
+
 	#get the pickled dictionary of nodes and node names that is made while the csv file is loaded.
 	try:
 		nodes = open('nodes.p','r')
@@ -101,7 +97,11 @@ def growgraph(force_connected = False, sparse = True, plot = False, directed = T
 	if graph_db.size < 2:
 		print 'Your graph is empty. Please load a graph into the database.'
 		1/0
-	
+	#make a list of all the nodes in the database to randomly choose from, but only if force connected graph option is false. 
+	if force_connected == False:
+		possiblenodes = nodes
+		print 'Graph will not be fully connected, use "force_connected = True" if you want it to be fully connected'
+
 	# here we figure out at what points to measure if the user wants a spare measumement or to measure every time a node is added. This speeds up big graph growths a lot! 
 	if sparse == True:
 	    sparsemeasurements = [6,7,8,9,growthfactor]
@@ -111,14 +111,12 @@ def growgraph(force_connected = False, sparse = True, plot = False, directed = T
 	else:
 		sparsemeasurements = range(2,growthfactor)
 
-
 	# this will actually only work for directed graph because we are moralizing, but I want to leave the option for later. Perhaps I can just skip moralization for undirected graph.
 	if directed:
 		graph = nx.DiGraph()
 	else:
 		graph = nx.graph()
 
-	nodegrowth = graph.size()
 
 	# this will grow the whole graph. Takes a while for big ones! 
 	if wholegrowth == True:
@@ -128,70 +126,82 @@ def growgraph(force_connected = False, sparse = True, plot = False, directed = T
 	initial_node = random.choice(nodes.keys()) #randomly get a node to add from dictionary
 	if verbose:
 	    print 'Starting from ' + initial_node
-	while nodegrowth < growthfactor:
-        if nodegrowth > 1:
-        	if force_connected == True # this will only pick nodes from the growing graph, not the database graph.
-            	possiblenodes = graph.nodes() # get all nodes in graph.
-            fromnode = random.choice(possiblenodes) #pick random node in graph to grow from.
-            if verbose:
-                print 'Using ' + str(fromnode) + ' to find new node'
-        else: #this is because you can't do random from one node at the start.
-            fromnode = initial_node
-            if verbose:
-                print 'using initial node'
-        
-        fromnode = nodes[fromnode] #get DB version of the node.
-        #get all relatinpships in graph DB for that node
-        new_node_rels = list(graph_db.match(end_node = fromnode, bidirectional=True))
-        new_rel = random.choice(new_node_rels)
-        
-        # is the new node a part or child of the node we are growing from?
-        if new_rel.end_node == fromnode:
-            new_node = new_rel.start_node
-        if new_rel.start_node == fromnode:
-            new_node = new_rel.end_node
-        assert new_node != fromnode
-        rels = list(graph_db.match(start_node=new_node)) #query graph for edges from that node
-        for edge in rels:
-            newnodename = edge.start_node.get_properties()
-            newnodename = newnodename.get('name')
-            newnodename = newnodename.encode()
-            endnodename = edge.end_node.get_properties()
-            endnodename = endnodename.get('name')
-            endnodename = endnodename.encode()
-            if newnodename not in graph: #check to see if new node is in graph
-                graph.add_node(newnodename) # add if not
-                if verbose:
-                    print 'added ' + str(newnodename)
-            if endnodename in graph: #check to see if end node is in graph
-                graph.add_edge(newnodename, endnodename) #add it if it is
-                if verbose:
-                    print 'connected ' + newnodename +' to '+ endnodename
-        
-        rels = list(graph_db.match(end_node=new_node)) #query graph for edges to that node
-        for edge in rels:
-            newnodename = edge.end_node.get_properties()
-            newnodename = newnodename.get('name')
-            newnodename = newnodename.encode()
-            startnodename = edge.start_node.get_properties()
-            startnodename = startnodename.get('name')
-            startnodename = startnodename.encode()
-            if newnodename not in graph: #check to see if new node is in graph
-                graph.add_node(newnodename) # add if not
-                if verbose:
-                    print 'added ' + str(newnodename)
-            if startnodename in graph: #check to see if end node is in graph
-                graph.add_edge(startnodename, newnodename) #add it if it is
-                if verbose:
-                    print 'connected ' + startnodename +' to '+ newnodename
-        nodegrowth = len(graph.nodes())
-        if verbose:
-        	print 'Graph has ' + str(nodegrowth) + ' nodes.'
-        edgegrowth = len(graph.edges())
-        if verbose:
-	        	print 'Graph has ' + str(edgegrowth) + ' edges.'
+	used = 0
+	#measure the nodegrowth 
+	nodegrowth = graph.size()
+	while nodegrowth < growthfactor: # make sure we aren't above how many nodes we want to measure in the graph    
+		if force_connected == True:
+			if nodegrowth > 1:
+				possiblenodes = graph.nodes() # get all nodes in graph.
+				fromnode = random.choice(possiblenodes) #pick random node in graph to grow from.
+				if verbose:
+				    print 'Using ' + str(fromnode) + ' to find new node'
+			else: #this is because you can't do random from one node at the start.
+			    fromnode = initial_node
+			    if verbose:
+			        print 'using initial node'
+			        used = used+1
+			        if used > 5:
+			        	1/0
 
-	        if nodegrowth in sparsemeasurements: 
+			fromnode = nodes[fromnode] #get DB version of the node.
+			#get all relationpships in graph DB for that node
+			new_node_rels = list(graph_db.match(end_node = fromnode, bidirectional=True))
+			new_rel = random.choice(new_node_rels)
+
+			# is the new node a parentt or child of the node we are growing from?
+			if new_rel.end_node == fromnode:
+			    new_node = new_rel.start_node
+			if new_rel.start_node == fromnode:
+			    new_node = new_rel.end_node
+			assert new_node != fromnode
+		
+		if force_connected == False:
+			new_node = random.choice(possiblenodes.values())
+			
+		print 'adding' + str(new_node)
+	    # go through the list of edges that have the new node as a part of it, and only add the edge if they are between the new node and a node in the graph already.
+		rels = list(graph_db.match(start_node=new_node)) #query graph for edges from that node
+		for edge in rels:
+		    newnodename = edge.start_node.get_properties()
+		    newnodename = newnodename.get('name')
+		    newnodename = newnodename.encode()
+		    endnodename = edge.end_node.get_properties()
+		    endnodename = endnodename.get('name')
+		    endnodename = endnodename.encode()
+		    if newnodename not in graph: #check to see if new node is in graph
+		        graph.add_node(newnodename) # add if not
+		        if verbose:
+		            print 'added ' + str(newnodename)
+		    if endnodename in graph: #check to see if end node is in graph
+		        graph.add_edge(newnodename, endnodename) #add it if it is
+		        if verbose:
+		            print 'connected ' + newnodename +' to '+ endnodename
+
+		rels = list(graph_db.match(end_node=new_node)) #query graph for edges to that node
+		for edge in rels:
+		    newnodename = edge.end_node.get_properties()
+		    newnodename = newnodename.get('name')
+		    newnodename = newnodename.encode()
+		    startnodename = edge.start_node.get_properties()
+		    startnodename = startnodename.get('name')
+		    startnodename = startnodename.encode()
+		    if newnodename not in graph: #check to see if new node is in graph
+		        graph.add_node(newnodename) # add if not
+		        if verbose:
+		            print 'added ' + str(newnodename)
+		    if startnodename in graph: #check to see if end node is in graph
+		        graph.add_edge(startnodename, newnodename) #add it if it is
+		        if verbose:
+		            print 'connected ' + startnodename +' to '+ newnodename
+		nodegrowth = len(graph.nodes())
+		if verbose:
+			print 'Graph has ' + str(nodegrowth) + ' nodes.'
+		edgegrowth = len(graph.edges())
+		if verbose:
+		    	print 'Graph has ' + str(edgegrowth) + ' edges.'
+
+			if nodegrowth in sparsemeasurements: 
 				start_time = time()
 				try:
 					modgraph = nx.Graph(graph) #make it into a networkx graph
@@ -254,6 +264,40 @@ def growgraph(force_connected = False, sparse = True, plot = False, directed = T
 					ax2.set_ylabel(ploty2, fontsize=20)
 					plt.suptitle('Graph Growth', fontsize=30)
 					plt.legend((line1,line2),(ploty , ploty2), loc='upper center', frameon=False, fontsize=20)
+					plt.show()
+				if draw == True:
+					if drawgraph == 'triangulated':
+						G = nx.from_numpy_matrix(triangulated)
+					elif drawgraph == 'moral':
+						G = nx.from_numpy_matrix(moralized)
+					elif drawgraph == 'directed':
+						G = graph()
+				# position is stored as node attribute data for random_geometric_graph
+					plt.close()
+					pos = nx.random_layout(G)
+					# find node near center (0.5,0.5)
+					dmin=1
+					ncenter=0
+					for n in pos:
+					    x,y=pos[n]
+					    d=(x-0.5)**2+(y-0.5)**2
+					    if d<dmin:
+					        ncenter=n
+					        dmin=d
+
+					# color by path length from node near center
+					p=nx.single_source_shortest_path_length(G,ncenter)
+
+					plt.figure(figsize=(15,15))
+					nx.draw_networkx_edges(G,pos,nodelist=[ncenter],alpha=0.2)
+					nx.draw_networkx_nodes(G,pos,nodelist=p.keys(),
+					                       node_size=20,
+					                       node_color=p.values(),
+					                       cmap=plt.cm.Reds_r)
+
+					plt.xlim(-0.05,1.05)
+					plt.ylim(-0.05,1.05)
+					plt.axis('off')
 					plt.show()
 	df = pd.DataFrame(data, columns= ('nodegrowth','edgegrowth', 'modularity','maxclique','avgclique','run_time'))
 	return(df)
