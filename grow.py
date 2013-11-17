@@ -23,7 +23,7 @@ import pybayes
 # 1. Reverse the direction of the edges. The in-degree distribution in this graph is power-law, but the out-degree is exponential tailed. So this is just a check that degree distribution is irrelevant.
 # 2. Keep the number of outgoing links for each node the same, but randomly allocating their destinations. This should break modularity, put preserves out-degree.
 # 3. Same thing, but this time fixing the number of incoming links and randomly allocating their origins. Likewise, but preserves in-degree.
-# comment the fuck out of it and proof it.
+
 # get bnt stuff working better. 
 # build setup.py
 
