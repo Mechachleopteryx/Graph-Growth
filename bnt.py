@@ -1,10 +1,10 @@
 #This is the function we will call to run the BNT.
 from oct2py import Oct2Py #this is not built in.
-from oct2py import octave
+from oct2py import octave as bnt
 
 def run(command,numtries=5):
 	tries = 0
-	c = 'octave.' + str(command)
+	c = 'bnt.' + str(command)
 	exec(c)
 	# while tries < numtries: 
 	# 	try:
