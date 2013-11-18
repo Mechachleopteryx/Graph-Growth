@@ -17,14 +17,14 @@ import pickle
 from oct2py import Oct2Py
 from oct2py import octave
 import matplotlib.pylab as plt
-import pybayes 
+ 
 
 ##add random
 # 1. Reverse the direction of the edges. The in-degree distribution in this graph is power-law, but the out-degree is exponential tailed. So this is just a check that degree distribution is irrelevant.
 # 2. Keep the number of outgoing links for each node the same, but randomly allocating their destinations. This should break modularity, put preserves out-degree.
 # 3. Same thing, but this time fixing the number of incoming links and randomly allocating their origins. Likewise, but preserves in-degree.
 
-=======
+
 # build setup.py
 #get the other modules you built in here.
 #modularity isn't working yet
@@ -94,10 +94,10 @@ def load(csvfile,verbose = True):
 def growgraph(usenx= True, force_connected = True, sparse = True, plot = False, directed = True, randomgrowth=False, wholegrowth=False,growthfactor=100, num_measurements = 10, verbose = True, connected = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modularity',drawgraph = 'triangulated', draw= True, drawspectral = True, getgraph = True):
 	#make sure user does not want to draw and plot at the same time. 
 	if plot == True:
-		assert draw == False
+		draw = False
 	if draw == True:
-		assert plot == False
-	"""you cannot plot and draw at the same time"""
+		plot = False
+	#you cannot plot and draw at the same time
 	
     # initialize database 
 	graph_db = database()
@@ -107,7 +107,7 @@ def growgraph(usenx= True, force_connected = True, sparse = True, plot = False, 
 		nodes = open('nodes.p','r')
 		nodes = pickle.load(nodes)
 	except:
-		print 'Your graph is empty. Please loab a graph into the database.'
+		print 'Your graph is empty. Please load a graph into the database.'
 		1/0
 	data = []
 	if graph_db.size < 2:
@@ -226,15 +226,16 @@ def growgraph(usenx= True, force_connected = True, sparse = True, plot = False, 
 		    #here is where we measure everything about the graph 
 		if nodegrowth in sparsemeasurements: #we only measure every now and then in sparse.
 			start_time = time()
-			try: #modularity
+			# try: #modularity
+			if nodegrowth > 5:
 				modgraph = nx.Graph(graph) #make it into a networkx graph
 				partition = best_partition(modgraph) #find the partition with maximal modularity
-				modularity = modularity(partition,modgraph) #calculate modularity with that partition
-			except: #can't calculate modularity on super small graphs.
-				modularity = 0.0 
+				modval = modularity(partition,modgraph) #calculate modularity with that partition
+			# except: #can't calculate modularity on super small graphs.
+			# 	modularity = 0.0 
 			#option to use python nx to moralize and triangulate
 			if usenx == True:
-				moralized = pybayes.moralize(graph)
+				moralized = moral_graph(graph)
 			else: #use Octave to run Matlab Bayes Net Toolbox
 				moralized = nx.to_numpy_matrix(graph) # make nx graph into a simple matrix
 				ismoral = False
@@ -271,12 +272,12 @@ def growgraph(usenx= True, force_connected = True, sparse = True, plot = False, 
 			avgclique = np.mean(cliquesizes) # get the mean of the clique sizes
 			end_time = time()
 			run_time = end_time - start_time #time how long all the took
-			data.append([nodegrowth, len(graph.edges()), modularity, maxclique,avgclique,run_time]) #store results
+			data.append([nodegrowth, len(graph.edges()), modval, maxclique,avgclique,run_time]) #store results
 			sparsemeasurements.remove(nodegrowth) #so we don't calculate clique size more than once!
 			if verbose:
 			    print 'took ' + str(run_time) + ' to run last computation'
 			#this will always print, basic status update everytime clique size is measured.
-			print 'Growing graph with ' + str(nodegrowth) + ' nodes, ' + str(modularity) + ' modularity, max clique of ' + str(maxclique) + ', ' + str(len(graph.edges())) + ' edges.'
+			print 'Growing graph with ' + str(nodegrowth) + ' nodes, ' + str(modval) + ' modularity, max clique of ' + str(maxclique) + ', ' + str(len(graph.edges())) + ' edges.'
 			#this will redraw the plot everytime a computation is done.
 			if plot == True:
 				df = pd.DataFrame(data, columns= ('nodegrowth','edgegrowth', 'modularity','maxclique','avgclique','run_time'))
@@ -497,6 +498,10 @@ def junction_tree(G):
     J = maximum_spanning_tree(CG)
     return J
 
+
+__PASS_MAX = -1
+__MIN = 0.0000001
+
 import networkx as nx
 import sys
 import types
@@ -543,7 +548,7 @@ def partition_at_level(dendogram, level) :
         for node, community in partition.iteritems() :
             partition[node] = dendogram[index][community]
     return partition
-    
+
 
 def modularity(partition, graph) :
     """Compute the modularity of a partition of a graph
@@ -587,7 +592,7 @@ def modularity(partition, graph) :
     links = graph.size(weight='weight')
     if links == 0 :
         raise ValueError("A graph without link has an undefined modularity")
-    
+
     for node in graph :
         com = partition[node]
         deg[com] = deg.get(com, 0.) + graph.degree(node, weight = 'weight')
@@ -611,7 +616,7 @@ def best_partition(graph, partition = None) :
 
     This is the partition of highest modularity, i.e. the highest partition of the dendogram
     generated by the Louvain algorithm.
-    
+
     Parameters
     ----------
     graph : networkx.Graph
@@ -646,7 +651,7 @@ def best_partition(graph, partition = None) :
     >>>  #Basic usage
     >>> G=nx.erdos_renyi_graph(100, 0.01)
     >>> part = best_partition(G)
-    
+
     >>> #other example to display a graph with its community :
     >>> #better with karate_graph() as defined in networkx examples
     >>> #erdos renyi don't have true community structure
@@ -687,7 +692,7 @@ def generate_dendogram(graph, part_init = None) :
     -------
     dendogram : list of dictionaries
         a list of partitions, ie dictionnaries where keys of the i+1 are the values of the i. and where keys of the first are the nodes of graph
-    
+
     Raises
     ------
     TypeError
@@ -715,14 +720,14 @@ def generate_dendogram(graph, part_init = None) :
     if type(graph) != nx.Graph :
         raise TypeError("Bad graph type, use only non directed graph")
 
-    #special case, when there is no link 
+    #special case, when there is no link
     #the best partition is everyone in its community
     if graph.number_of_edges() == 0 :
         part = dict([])
         for node in graph.nodes() :
             part[node] = node
         return part
-        
+
     current_graph = graph.copy()
     status = Status()
     status.init(current_graph, part_init)
@@ -735,7 +740,7 @@ def generate_dendogram(graph, part_init = None) :
     mod = new_mod
     current_graph = induced_graph(partition, current_graph)
     status.init(current_graph)
-    
+
     while True :
         __one_level(current_graph, status)
         new_mod = __modularity(status)
@@ -781,14 +786,14 @@ def induced_graph(partition, graph) :
     """
     ret = nx.Graph()
     ret.add_nodes_from(partition.values())
-    
+
     for node1, node2, datas in graph.edges_iter(data = True) :
         weight = datas.get("weight", 1)
         com1 = partition[node1]
         com2 = partition[node2]
         w_prec = ret.get_edge_data(com1, com2, {"weight":0}).get("weight", 1)
         ret.add_edge(com1, com2, weight = w_prec + weight)
-        
+
     return ret
 
 
@@ -798,7 +803,7 @@ def __renumber(dictionary) :
     count = 0
     ret = dictionary.copy()
     new_values = dict([])
-    
+
     for key in dictionary.keys() :
         value = dictionary[key]
         new_value = new_values.get(value, -1)
@@ -807,7 +812,7 @@ def __renumber(dictionary) :
             new_value = count
             count = count + 1
         ret[key] = new_value
-        
+
     return ret
 
 
@@ -816,7 +821,7 @@ def __load_binary(data) :
     """
     if type(data) == types.StringType :
         data = open(data, "rb")
-        
+
     reader = array.array("I")
     reader.fromfile(data, 1)
     num_nodes = reader.pop()
@@ -830,13 +835,13 @@ def __load_binary(data) :
     graph = nx.Graph()
     graph.add_nodes_from(range(num_nodes))
     prec_deg = 0
-    
+
     for index in range(num_nodes) :
         last_deg = cum_deg[index]
         neighbors = links[prec_deg:last_deg]
         graph.add_edges_from([(index, int(neigh)) for neigh in neighbors])
         prec_deg = last_deg
-        
+
     return graph
 
 
@@ -847,12 +852,12 @@ def __one_level(graph, status) :
     nb_pass_done = 0
     cur_mod = __modularity(status)
     new_mod = cur_mod
-    
+
     while modif  and nb_pass_done != __PASS_MAX :
         cur_mod = new_mod
         modif = False
         nb_pass_done += 1
-        
+
         for node in graph.nodes() :
             com_node = status.node2com[node]
             degc_totw = status.gdegrees.get(node, 0.) / (status.total_weight*2.)
@@ -865,11 +870,11 @@ def __one_level(graph, status) :
                 incr =  dnc  - status.degrees.get(com, 0.) * degc_totw
                 if incr > best_increase :
                     best_increase = incr
-                    best_com = com                    
+                    best_com = com
             __insert(node, best_com,
                     neigh_communities.get(best_com, 0.), status)
             if best_com != com_node :
-                modif = True                
+                modif = True
         new_mod = __modularity(status)
         if new_mod - cur_mod < __MIN :
             break
@@ -886,7 +891,7 @@ class Status :
     internals = {}
     degrees = {}
     gdegrees = {}
-    
+
     def __init__(self) :
         self.node2com = dict([])
         self.total_weight = 0
@@ -894,7 +899,7 @@ class Status :
         self.gdegrees = dict([])
         self.internals = dict([])
         self.loops = dict([])
-        
+
     def __str__(self) :
         return ("node2com : " + str(self.node2com) + " degrees : "
             + str(self.degrees) + " internals : " + str(self.internals)
@@ -962,7 +967,7 @@ def __neighcom(node, graph, status) :
             weight = datas.get("weight", 1)
             neighborcom = status.node2com[neighbor]
             weights[neighborcom] = weights.get(neighborcom, 0) + weight
-            
+
     return weights
 
 
@@ -973,7 +978,7 @@ def __remove(node, com, weight, status) :
     status.internals[com] = float( status.internals.get(com, 0.) -
                 weight - status.loops.get(node, 0.) )
     status.node2com[node] = -1
-    
+
 
 def __insert(node, com, weight, status) :
     """ Insert node into community and modify status"""
@@ -998,7 +1003,7 @@ def __modularity(status) :
     return result
 
 
-def __main() :
+def main() :
     """Main function to mimic C++ version behavior"""
     try :
         filename = sys.argv[1]
@@ -1013,15 +1018,5 @@ def __main() :
         print "Parameters:"
         print "filename is a binary file as generated by the "
         print "convert utility distributed with the C implementation"
-
-    
-
-if __name__ == "__main__" :
-    __main()
->>>>>>> 63a0e28e236cbf83870592a2a27e62fe3c21ff85
-
-
-
-
 
 
