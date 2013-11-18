@@ -9,7 +9,7 @@ import numpy as np
 import os
 import pickle
 import csv
-import random
+import random as Random
 from time import time, sleep
 from py2neo import neo4j, rel, node
 import pandas as pd
@@ -18,16 +18,6 @@ from oct2py import Oct2Py
 from oct2py import octave
 import matplotlib.pylab as plt
  
-
-##add random
-# 1. Reverse the direction of the edges. The in-degree distribution in this graph is power-law, but the out-degree is exponential tailed. So this is just a check that degree distribution is irrelevant.
-# 2. Keep the number of outgoing links for each node the same, but randomly allocating their destinations. This should break modularity, put preserves out-degree.
-# 3. Same thing, but this time fixing the number of incoming links and randomly allocating their origins. Likewise, but preserves in-degree.
-
-
-# build setup.py
-#get the other modules you built in here.
-#modularity isn't working yet
 
 #this does the whole shebang!
 def grow(csvfile, getgraph = True, drawspectral = True, force_connected = True, usenx= True, sparse = True, plot = False, directed = True, randomgrowth=False, wholegrowth=False,growthfactor=100, num_measurements = 10, verbose = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modularity',drawgraph = 'triangulated', draw= True):
@@ -222,6 +212,8 @@ def growgraph(usenx= True, force_connected = True, sparse = True, plot = False, 
 			print 'Graph has ' + str(nodegrowth) + ' nodes.'
 		if verbose:
 		    print 'Graph has ' + str(edgegrowth) + ' edges.'
+
+
 
 		    #here is where we measure everything about the graph 
 		if nodegrowth in sparsemeasurements: #we only measure every now and then in sparse.
