@@ -24,15 +24,10 @@ import pybayes
 # 2. Keep the number of outgoing links for each node the same, but randomly allocating their destinations. This should break modularity, put preserves out-degree.
 # 3. Same thing, but this time fixing the number of incoming links and randomly allocating their origins. Likewise, but preserves in-degree.
 
-# get bnt stuff working better. 
-<<<<<<< HEAD
-
 =======
 # build setup.py
 #get the other modules you built in here.
 #modularity isn't working yet
->>>>>>> 63a0e28e236cbf83870592a2a27e62fe3c21ff85
-
 
 #this does the whole shebang!
 def grow(csvfile, getgraph = True, drawspectral = True, force_connected = True, usenx= True, sparse = True, plot = False, directed = True, randomgrowth=False, wholegrowth=False,growthfactor=100, num_measurements = 10, verbose = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modularity',drawgraph = 'triangulated', draw= True):
@@ -346,9 +341,9 @@ def growgraph(usenx= True, force_connected = True, sparse = True, plot = False, 
 	else:
 		return(df)
 
-#this is the community finding stuff. I did not write this...
+#this is the community finding stuff and networkx bayes stuff. I did not write this...
 
-<<<<<<< HEAD
+
 def markov_blanket(G, n):
     """
     Returns the Markov blanket of `n`.
@@ -501,7 +496,7 @@ def junction_tree(G):
     CG = clique_graph(G)
     J = maximum_spanning_tree(CG)
     return J
-=======
+
 import networkx as nx
 import sys
 import types
