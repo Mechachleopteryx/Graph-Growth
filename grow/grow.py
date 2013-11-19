@@ -24,11 +24,20 @@ def grow(csvfile, reverserandom=False, outgoingrandom = True, incomingrandom = F
 	"""
 	This function will load your graph and grow it. 
 	It takes in the same parameters as load_graph and grow_graph, and does it all at once.
+
+	Returns:
+
+	If you pass it the option to grow a random graph, it returns the graph, the random graph, and the data
+	If you pass it no random options, it returns the graph and the data.
 	
 	"""
 	load_graph(csvfile = csvfile)
-	graph, data = grow_graph(reverserandom=reverserandom, outgoingrandom = outgoingrandom, incomingrandom = incomingrandom, totalrandom = totalrandom, usenx= usenx, getgraph = getgraph, drawspectral = drawspectral, force_connected = force_connected, sparse = sparse, plot = plot, directed = directed, wholegrowth=wholegrowth,growthfactor=growthfactor, num_measurements = num_measurements, verbose = verbose, plotx = plotx, ploty = ploty, ploty2 = ploty2, drawgraph = drawgraph, draw= draw)
-	return graph, data
+	if reverserandom or outgoingrandom or incomingrandom or totalrandom == True
+		graph, randomgraph, data = grow_graph(reverserandom=reverserandom, outgoingrandom = outgoingrandom, incomingrandom = incomingrandom, totalrandom = totalrandom, usenx= usenx, getgraph = getgraph, drawspectral = drawspectral, force_connected = force_connected, sparse = sparse, plot = plot, directed = directed, wholegrowth=wholegrowth,growthfactor=growthfactor, num_measurements = num_measurements, verbose = verbose, plotx = plotx, ploty = ploty, ploty2 = ploty2, drawgraph = drawgraph, draw= draw)
+		return graph, randomgraph, data
+	else: 
+		graph, data = grow_graph(reverserandom=reverserandom, outgoingrandom = outgoingrandom, incomingrandom = incomingrandom, totalrandom = totalrandom, usenx= usenx, getgraph = getgraph, drawspectral = drawspectral, force_connected = force_connected, sparse = sparse, plot = plot, directed = directed, wholegrowth=wholegrowth,growthfactor=growthfactor, num_measurements = num_measurements, verbose = verbose, plotx = plotx, ploty = ploty, ploty2 = ploty2, drawgraph = drawgraph, draw= draw)
+		return graph, data
 
 def get_nodename(node):
     node = node.get_properties()
