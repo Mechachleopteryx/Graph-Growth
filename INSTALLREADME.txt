@@ -1,4 +1,12 @@
 Install Process
+
+
+You can do it with a one liner. Go to the grow folder and run…
+
+$ python setup.py install 
+
+
+Or you can do it by hand…
 ______________________________________________
 Get oct2py 
 $ pip install oct2py
