@@ -32,7 +32,7 @@ def grow(csvfile, reverserandom=False, outgoingrandom = True, incomingrandom = F
 	
 	"""
 	load_graph(csvfile = csvfile)
-	if reverserandom or outgoingrandom or incomingrandom or totalrandom == True
+	if reverserandom or outgoingrandom or incomingrandom or totalrandom == True:
 		graph, randomgraph, data = grow_graph(reverserandom=reverserandom, outgoingrandom = outgoingrandom, incomingrandom = incomingrandom, totalrandom = totalrandom, usenx= usenx, getgraph = getgraph, drawspectral = drawspectral, force_connected = force_connected, sparse = sparse, plot = plot, directed = directed, wholegrowth=wholegrowth,growthfactor=growthfactor, num_measurements = num_measurements, verbose = verbose, plotx = plotx, ploty = ploty, ploty2 = ploty2, drawgraph = drawgraph, draw= draw)
 		return graph, randomgraph, data
 	else: 
