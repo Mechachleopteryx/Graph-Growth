@@ -1,5 +1,4 @@
-This module will load very large graphs into a database and then grow that graph and measure important properties as it grows, 
-with the option to grow a number of different random graph alongside it for comparison.
+This module will load very large graphs into a database and then grow that graph and measure important properties as it grows, with the option to grow a number of different random graph alongside it for comparison.
 You have the option to draw the graphs as they grow, or plot the graph measurements as the graphs grow.
 
 It is written in Python. It uses py2neo and neo4j to store the graph as a database, allowing for very large graphs. All functions were written by Maxwell Bertolero(2013), except for the Bayes Network Toolbox stuff, which is run via Octave and oct2py. 
