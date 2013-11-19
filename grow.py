@@ -20,9 +20,14 @@ import matplotlib.pylab as plt
  
 
 #this does the whole shebang!
-def grow(csvfile, reverserandom=False, outgoingrandom = True, incomingrandom = False, totalrandom = False,getgraph = True, drawspectral = True, force_connected = True, usenx= True, sparse = True, plot = False, directed = True, randomgrowth=False, wholegrowth=False,growthfactor=100, num_measurements = 10, verbose = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modval',drawgraph = 'triangulated', draw= True):
-	load_graph(csvfile = csvfile, verbose = verbose)
-	graph, data = grow_graph(reverserandom=reverserandom, outgoingrandom = outgoingrandom, incomingrandom = incomingrandom, totalrandom = totalrandom, usenx= usenx, getgraph = getgraph, drawspectral = drawspectral, force_connected = force_connected, sparse = sparse, plot = plot, directed = directed, randomgrowth= randomgrowth, wholegrowth=wholegrowth,growthfactor=growthfactor, num_measurements = num_measurements, verbose = verbose, plotx = plotx, ploty = ploty, ploty2 = ploty2, drawgraph = drawgraph, draw= draw)
+def grow(csvfile, reverserandom=False, outgoingrandom = True, incomingrandom = False, totalrandom = False,getgraph = True, drawspectral = True, force_connected = True, usenx= True, sparse = True, plot = False, directed = True, wholegrowth=False,growthfactor=100, num_measurements = 10, verbose = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modval',drawgraph = 'triangulated', draw= True):
+	"""
+	This function will load your graph and grow it. 
+	It takes in the same parameters as load_graph and grow_graph, and does it all at once.
+	
+	"""
+	load_graph(csvfile = csvfile)
+	graph, data = grow_graph(reverserandom=reverserandom, outgoingrandom = outgoingrandom, incomingrandom = incomingrandom, totalrandom = totalrandom, usenx= usenx, getgraph = getgraph, drawspectral = drawspectral, force_connected = force_connected, sparse = sparse, plot = plot, directed = directed, wholegrowth=wholegrowth,growthfactor=growthfactor, num_measurements = num_measurements, verbose = verbose, plotx = plotx, ploty = ploty, ploty2 = ploty2, drawgraph = drawgraph, draw= draw)
 	return graph, data
 
 def get_nodename(node):
@@ -33,6 +38,12 @@ def get_nodename(node):
 
 #initializes database
 def database():
+	"""
+	Initializes the database where the graph is stored
+
+	The User should not use this, it is only referenced in other functions
+	"""
+
 	tries = 0
 	connected = False
 	while connected == False and tries < 5:
@@ -53,17 +64,34 @@ def database():
 
 
 #loads in the csv file into the database.
-def load_graph(csvfile,verbose = True):	
+def load_graph(csvfile):	
+	"""
+	Load your graph into the database. This function allows you to load any graph
+	into memory and then you can use the grow_graph function to grow and measure it.
+	You must load a graph in this way to use the grow_graph function.
+
+	Simply pass in your CSV file. It assumes the 0 column is the parent node, and 1
+	is the child node. Each line is an edge.
+
+	It will save a pickled file in the nodes it added to the database for later use.
+	This means that you need to be running this function and the graph_grow function
+	from the same directory.
+
+	If you want to delete the database,
+	$ cd /usr/local/Cellar/neo4j/1.9.4/libexec/data
+	$ os.command(rm -R graph_db)
+
+	Parameters:
+
+	csvfile: load in your csvfile that is the edges in your graph.
+
+	"""
+
+	# get the graph database server going.
 	graph_db = database()
 	if verbose:
 		print 'started new graph database'
-	# get the graph database server going.
-	
-	#if you want to delete the database!
-	# cd /usr/local/Cellar/neo4j/1.9.4/libexec/data
-	# os.command(rm -R graph_db)
 
-	# this will store in usr/local/Cellar/neo4j/community-1.9.2-unix/libexec/data
 	#make sure graph DB initialized 
 	print 'Graph Version: ' + str(graph_db.neo4j_version)
 	csvfile = open(csvfile)
@@ -82,9 +110,57 @@ def load_graph(csvfile,verbose = True):
 	pickle.dump(nodes, open("nodes.p", "wb" ) )
 
 #this does all the growth and measurement stuff.
-def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = False, totalrandom = False, usenx= True, force_connected = True, sparse = True, plot = False, directed = True, randomgrowth=False, wholegrowth=False,growthfactor=100, num_measurements = 10, verbose = True, connected = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modval',drawgraph = 'triangulated', draw= True, drawspectral = True, getgraph = True):
+def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = False, totalrandom = False, usenx= True, force_connected = True, sparse = True, plot = False, directed = True, wholegrowth=False,growthfactor=100, num_measurements = 10, verbose = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modval',drawgraph = 'triangulated', draw= True, drawspectral = True, getgraph = True):
+	"""
+	This function takes a graph that was loaded using load_graph and grows it,
+	meauring modularity and clique size.
+
+	Parameters:
+	growthfactor: int, How many nodes do you want to grow your graph to? Default: 100
+
+	wholegrowth: Boolean, This will grow the entire graph. Default: False
+
+	verbose: Boolean, Do you want to see what's going on while it grows? Default: True
 	
-	random = False #set as false, gets made to truth later if the person passes a type of random graph they want
+	sparse: Boolean, Do you want to measure sparely? This can really speed things
+	up for a larger graph. It measures on a log scale, e.g., 1, 3, 9, 27...
+	Default: True
+
+	num_measurements: int, How many times do you want to measure the graph? Default: 10
+
+	force_connected: Boolean, Do you want the graph to remain connected as it grows? Default: True
+
+	directed: Boolean, Is your graph directed? Right now, this only supports directed graphs. Default: True
+
+	draw: Boolean, Do you want to see the graph as it grows? Default: False
+	You cannot plot and draw at the same time. It will default to plot if you have both True.
+
+	drawgraph: str, What graph do you want to draw? Options: 'triangulated', 'moralized', 'directed'
+
+	drawspectral: Boolean, This will draw a spectral layout of the graph instead of a random one. Default: False
+
+	plot: Boolean, Do you want to plot the growth measurements as the graph grows? Default: False
+
+	plotx: str, What x axis do you want to plot? Options: 'nodegrowth', 'edgegrowth', 'maxclique', 'modval', 'run_time', 'avgclique', Default: 'nodegrowth'
+	ploty: str, What y axis do you want to plot? Options: 'nodegrowth', 'edgegrowth', 'maxclique', 'modval', 'run_time', 'avgclique', Default: 'maxclique'
+	ploty2: str, What 2nd y axis do you want to plot? Options: 'nodegrowth', 'edgegrowth', 'maxclique', 'modularity', 'run_time', 'avgclique', Default: 'modval'
+
+	reverserandom: Boolean, This will reverse the direction of edges and grow that as a "random" graph alongside the real graph.
+	outgoingrandom: Boolean, This will shuffle all the outgoing edges, keeping the out-degree the same, and grow that as a "random" graph alongside the real graph.
+	incomingrandom = Boolean, This will shuffle all the incoming edges, keeping the in-degree the same, and grow that as a "random" graph alongside the real graph.
+	totalrandom = Boolean, This uses a graph picked randomly out of the set of all graphs with the same number of nodes and edges as the real graph, and then
+	grow that as a "random" graph alongside the real graph. This preserves overall degree, and number of nodes/edges
+	
+	usenx: Boolean, This uses python code wherever possible, instaeding of making use of the Matlab Bayes Net Toolbox. Default: True
+
+
+	Returns:
+
+	the grown graph, the random growth graph(only if one is grown), dataframe of measurements
+
+	"""
+
+	random = False #set as false, gets made to truth later if the user passes a type of random graph they want
 
 	#make sure user does not want to draw and plot at the same time. 
 	if plot == True:
@@ -433,28 +509,12 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 				plt.show()
 	if random == True:
 		df = pd.DataFrame(data, columns= ('nodegrowth', 'edgegrowth', 'modval','random_modval', 'maxclique', 'random_maxclique', 'avgclique', 'random_avgclique', 'run_time'))
+		return(graph, random_graph, df)
 	if random == False:
 		df = pd.DataFrame(data, columns= ('nodegrowth','edgegrowth', 'modval','maxclique','avgclique','run_time'))
-	if getgraph == True:
 		return (graph, df)
-	else:
-		return(df)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#this is the community finding stuff and networkx bayes stuff. I did not write this...
+#this is the community finding stuff and networkx bayes stuff. I did not write ANY this...
 
 
 def markov_blanket(G, n):
