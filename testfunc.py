@@ -18,8 +18,8 @@ drawgraph = 'triangulated'
 draw= False
 drawspectral = False
 getgraph = True
-reverserandom=True
-outgoingrandom = False
+reverserandom=False
+outgoingrandom = True
 incomingrandom = False
 totalrandom = False
 
@@ -58,7 +58,7 @@ if force_connected == False:
 
 # here we figure out at what points to measure if the user wants a spare measumement or to measure every time a node is added. This speeds up big graph growths a lot! 
 if sparse == True:
-    sparsemeasurements = [6,7,8,9,growthfactor]
+    sparsemeasurements = [10,15,growthfactor]
     measurements = np.logspace(1, (int(len(str(growthfactor))))-1, num_measurements)
     for x in measurements:
         sparsemeasurements.append(int(x))
@@ -166,42 +166,46 @@ while nodegrowth < growthfactor: # make sure we aren't above how many nodes we w
 		random = True
 	# Keep the number of outgoing links for each node the same, but randomly allocating their destinations. This should break modularity, put preserves out-degree.
 	if outgoingrandom == True:
+		random_graph = graph.copy()
 		for edge in random_graph.edges():
 			parent = edge[0]
 			child = edge[1]
-			graph.remove_edge(parent,child)
+			random_graph.remove_edge(parent,child)
 			newchild = parent
 			while newchild == parent: #so that we don't get a self loop.
 				newchild = np.random.choice(graph.nodes())
-			graph.add_edge(parent,newchild)
+			random_graph.add_edge(parent,newchild)
 			random = True
 	# Same thing, but this time fixing the number of incoming links and randomly allocating their origins. Likewise, but preserves in-degree.
 	if incomingrandom ==True:
+		random_graph = graph.copy()
 		for edge in random_graph.edges():
 			parent = edge[0]
 			child = edge[1]
-			graph.remove_edge(parent,child)
+			random_graph.remove_edge(parent,child)
 			newparent = child
 			while newparent == child:
 				newparent = np.random.choice(graph.nodes())
-			graph.add_edge(newparent,child)
+			random_graph.add_edge(newparent,child)
 			random = True
 	#gives a graph picked randomly out of the set of all graphs with n nodes and m edges. This preserves overall degree, and number of nodes/edges, but is completeley random to outdegree/indegree. 
 	if totalrandom == True:
 		numrandomedges = graph.number_of_edges()
 		numrandomnodes = graph.number_of_nodes()
-		random_graph = nx.dense_gnm_random_graph(runrandomnodes, numrandomedges)
+		random_graph = nx.dense_gnm_random_graph(numrandomnodes, numrandomedges)
+		random_graph = random_graph.to_directed()
 		random = True
 			
 	    #here is where we measure everything about the graph 
 	if nodegrowth in sparsemeasurements: #we only measure every now and then in sparse.
 		start_time = time()
 		if nodegrowth > 5:
-			modgraph = nx.Graph(graph) #make it into a networkx graph. This measures moduilarity on undirected version of graph! 
+			modgraph = nx.Graph(graph) #make it into a undirected networkx graph. This measures moduilarity on undirected version of graph! 
 			partition = best_partition(modgraph) #find the partition with maximal modularity
 			modval = modularity(partition,modgraph) #calculate modularity with that partition
+			sleep(2)
 			if random == True:
-				random_modgraph = nx.Graph(random_graph) #make it into a networkx graph. This measures moduilarity on undirected version of graph! 
+				random_modgraph = random_graph.to_undirected() #make it into a undirected networkx graph. This measures moduilarity on undirected version of graph! 
 				random_partition = best_partition(random_modgraph) #find the partition with maximal modularity
 				random_modval = modularity(random_partition,random_modgraph) #calculate modularity with that partition
 		#option to use python nx to moralize and triangulate
@@ -232,19 +236,18 @@ while nodegrowth < growthfactor: # make sure we aren't above how many nodes we w
 		istriangulated = False
 		tries = 0
 		while istriangulated == False and tries < 5: #sometimes oct2py takes too long to return I think
-		    try:
-		        moralized = nx.to_numpy_matrix(moralized) 
-		        triangulated, cliques, fill_ins = octave.triangulate(moralized,order)
-		        if random == True:
-		        	sleep(2)
-		        	random_moralized = nx.to_numpy_matrix(random_moralized)
-		        	random_triangulated, random_cliques, random_fill_ins = octave.triangulate(random_moralized, random_order)
-		        istriangulated = True
-		        tries = 5
-		    except:
-		        istriangulated = False
-		        print 'Octave Error, trying again!'
-		        tries = tries + 1 
+			try:
+			    moralized = nx.to_numpy_matrix(moralized)  # have to make it into matrix.
+			    triangulated, cliques, fill_ins = octave.triangulate(moralized,order)
+			    if random == True:
+			    	random_moralized = nx.to_numpy_matrix(random_moralized) # have to make it into matrix.
+			    	random_triangulated, random_cliques, random_fill_ins = octave.triangulate(random_moralized, random_order)
+			    istriangulated = True
+			    tries = 5
+			except:
+			    istriangulated = False
+			    print 'Octave Error, trying again!'
+			    tries = tries + 1 
 		#loop through cliques and get the size of them
 		cliquesizes = [] #empty array to keep clique sizes in
 		for x in cliques:
@@ -252,25 +255,24 @@ while nodegrowth < growthfactor: # make sure we aren't above how many nodes we w
 		    cliquesizes.append(size)
 		maxclique = max(cliquesizes) #get the biggest clique
 		avgclique = np.mean(cliquesizes) # get the mean of the clique sizes
-		end_time = time() #get end time 
-		
+
 		#do the same for random graph cliques
 		if random == True:
 			random_cliquesizes = [] #empty array to keep clique sizes in
 			#loop through cliques and get the size of them
 			for x in random_cliques:
-			    size = len(x)
-			    random_cliquesizes.append(size)
+				size = len(x)
+				random_cliquesizes.append(size)
 			random_maxclique = max(random_cliquesizes) #get the biggest clique
 			random_avgclique = np.mean(random_cliquesizes) # get the mean of the clique sizes
-		
+	
 		end_time = time() #get end time 
 		run_time = end_time - start_time #time how long all the took
 		
 		#store the data! 
 
 		if random == True:
-			data.append([nodegrowth, edgegrowth, modval,random_modval, maxclique, random_maxclique, avgclique, random_avgclique, run_time]) #store results
+			data.append([nodegrowth, edgegrowth, modval, random_modval, maxclique, random_maxclique, avgclique, random_avgclique, run_time]) #store results
 
 		if random == False:
 			data.append([nodegrowth, edgegrowth, modval, maxclique,avgclique,run_time]) #store results
@@ -278,11 +280,14 @@ while nodegrowth < growthfactor: # make sure we aren't above how many nodes we w
 		sparsemeasurements.remove(nodegrowth) #so we don't calculate clique size more than once!
 		if verbose:
 		    print 'took ' + str(run_time) + ' to run last computation'
+		
 		#this will always print, basic status update everytime clique size is measured.
 		if random == True:
-			print str(nodegrowth) + ' nodes, ', str(edgegrowth) + 'edges ;' + 'Modularity: ' + str(modval) + 'Random Modularity: ' +str(random_modval) + 'Largest Clique: ' + str(maxclique) + 'Largest Random Clique: ' + str(random_maxclique)
+			print str(nodegrowth) + ' nodes, ', str(edgegrowth) + ' edges; ' + 'Modularity: ' + str(modval) + ', Random Modularity: ' +str(random_modval) + ', Largest Clique: ' + str(maxclique) + ', Largest Random Clique: ' + str(random_maxclique)
 		if random == False:
-			print str(nodegrowth) + ' nodes, ', str(edgegrowth) + 'edges ;' + 'Modularity: ' + 'str(modval)' + 'Largest Clique: ' + str(maxclique)
+			print str(nodegrowth) + ' nodes, ', str(edgegrowth) + ' edges; ' + 'Modularity: ' + str(modval) + ', Largest Clique: ' + str(maxclique)
+		
+
 		#this will redraw the plot everytime a computation is done.
 		if plot == True:
 			if random == False:
@@ -306,9 +311,10 @@ while nodegrowth < growthfactor: # make sure we aren't above how many nodes we w
 			if random == True:
 				df = pd.DataFrame(data, columns= ('nodegrowth', 'edgegrowth', 'modval','random_modval', 'maxclique', 'random_maxclique', 'avgclique', 'random_avgclique', 'run_time'))
 				plt.close()
-				fig = plt.figure(figsize=(24,16))
+				fig = plt.figure(figsize=(18,10))
 				ax = fig.add_subplot(1,1,1)
 				ax2 = ax.twinx()
+				ax3 = ax.twinx()
 				y1 = df[ploty]
 				y2 = df[ploty2]
 				y3def = str('random_'+ploty) # i just add random to whatever the user inputs as the y stuff they want to plot
@@ -317,14 +323,14 @@ while nodegrowth < growthfactor: # make sure we aren't above how many nodes we w
 				y4 = df[y4def]
 				x = df[plotx]
 				ax.set_xlabel('%s in Graph' %(plotx),fontsize=20)
-				line1, = ax.plot(x, y1, label = ploty)
-				line2, = ax2.plot(x, y2, label = ploty2)
-				line3, = ax.plot(x,y4, label = y3def)
-				line4, = ax2.plot(x,y4, label = y4def)
+				line1, = ax.plot(x, y1, label = ploty, color = 'blue')
+				line2, = ax2.plot(x, y2, label = ploty2, color = 'green')
+				line3, = ax.plot(x,y3, label = y3def, color = 'red')
+				line4, = ax3.plot(x,y4, label = y4def, color = 'cyan')
 				ax.set_ylabel(ploty,fontsize=20)
 				ax2.set_ylabel(ploty2, fontsize=20)
 				plt.suptitle('Graph Growth', fontsize=30)
-				plt.legend((line1,line2,line3,line4), loc='upper center', frameon=False, fontsize=20)#(ploty,ploty2,)
+				plt.legend((line1,line2,line3,line4), (ploty,ploty2,y3def,y4def),loc='upper center', frameon=False, fontsize=20)#
 				plt.show()
 		#draw the graph 
 		if draw == True:

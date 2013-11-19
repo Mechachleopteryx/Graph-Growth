@@ -1,5 +1,3 @@
-#! /usr/bin/env python 
-
 from distutils.core import setup 
 
 setup(name='grow',
@@ -21,7 +19,6 @@ os.system('brew install octave')
 
 #Get py2neo
 os.system('pip install py2neo')
-______________________________________________
 #Get neo4j
 os.system('brew install neo4j')
 
