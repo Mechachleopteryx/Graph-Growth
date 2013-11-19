@@ -304,44 +304,46 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 
 		#here I make a few random graphs to compare the growth of the real graph. They are all the same size and same edges, but different controls.		
 
-		# Reverse the direction of the edges. The in-degree distribution in this graph is power-law, but the out-degree is exponential tailed. So this is just a check that degree distribution is irrelevant.
-		if reverserandom == True: 
-			random_graph =  graph.reverse()
-			random = True
-		# Keep the number of outgoing links for each node the same, but randomly allocating their destinations. This should break modularity, put preserves out-degree.
-		if outgoingrandom == True:
-			random_graph = graph.copy()
-			for edge in random_graph.edges():
-				parent = edge[0]
-				child = edge[1]
-				random_graph.remove_edge(parent,child)
-				newchild = parent
-				while newchild == parent: #so that we don't get a self loop.
-					newchild = np.random.choice(graph.nodes())
-				random_graph.add_edge(parent,newchild)
-				random = True
-		# Same thing, but this time fixing the number of incoming links and randomly allocating their origins. Likewise, but preserves in-degree.
-		if incomingrandom ==True:
-			random_graph = graph.copy()
-			for edge in random_graph.edges():
-				parent = edge[0]
-				child = edge[1]
-				random_graph.remove_edge(parent,child)
-				newparent = child
-				while newparent == child:
-					newparent = np.random.choice(graph.nodes())
-				random_graph.add_edge(newparent,child)
-				random = True
-		#gives a graph picked randomly out of the set of all graphs with n nodes and m edges. This preserves overall degree, and number of nodes/edges, but is completeley random to outdegree/indegree. 
-		if totalrandom == True:
-			numrandomedges = graph.number_of_edges()
-			numrandomnodes = graph.number_of_nodes()
-			random_graph = nx.dense_gnm_random_graph(numrandomnodes, numrandomedges)
-			random_graph = random_graph.to_directed()
-			random = True
+
 				
 		    #here is where we measure everything about the graph 
 		if nodegrowth in sparsemeasurements: #we only measure every now and then in sparse.
+					# Reverse the direction of the edges. The in-degree distribution in this graph is power-law, but the out-degree is exponential tailed. So this is just a check that degree distribution is irrelevant.
+			if reverserandom == True: 
+				random_graph =  graph.reverse()
+				random = True
+			# Keep the number of outgoing links for each node the same, but randomly allocating their destinations. This should break modularity, put preserves out-degree.
+			if outgoingrandom == True:
+				random_graph = graph.copy()
+				for edge in random_graph.edges():
+					parent = edge[0]
+					child = edge[1]
+					random_graph.remove_edge(parent,child)
+					newchild = parent
+					while newchild == parent: #so that we don't get a self loop.
+						newchild = np.random.choice(graph.nodes())
+					random_graph.add_edge(parent,newchild)
+					random = True
+			# Same thing, but this time fixing the number of incoming links and randomly allocating their origins. Likewise, but preserves in-degree.
+			if incomingrandom ==True:
+				random_graph = graph.copy()
+				for edge in random_graph.edges():
+					parent = edge[0]
+					child = edge[1]
+					random_graph.remove_edge(parent,child)
+					newparent = child
+					while newparent == child:
+						newparent = np.random.choice(graph.nodes())
+					random_graph.add_edge(newparent,child)
+					random = True
+			#gives a graph picked randomly out of the set of all graphs with n nodes and m edges. This preserves overall degree, and number of nodes/edges, but is completeley random to outdegree/indegree. 
+			if totalrandom == True:
+				numrandomedges = graph.number_of_edges()
+				numrandomnodes = graph.number_of_nodes()
+				random_graph = nx.dense_gnm_random_graph(numrandomnodes, numrandomedges)
+				random_graph = random_graph.to_directed()
+				random = True
+
 			start_time = time()
 			if nodegrowth > 5:
 				modgraph = nx.Graph(graph) #make it into a undirected networkx graph. This measures moduilarity on undirected version of graph! 
