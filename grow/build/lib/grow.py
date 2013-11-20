@@ -253,11 +253,12 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 			    new_node = new_rel.start_node
 			if new_rel.start_node == fromnode:
 			    new_node = new_rel.end_node
-			assert new_node != fromnode
 		
 		if force_connected == False: # if not connected, we can just pick from the pickled dictionary of nodes in the database
 			new_node = np.random.choice(possiblenodes.values())
-			
+		
+		# you need to figure out a way to not try to add nodes already in graph. just store them in list and check the list. This will be faster. 
+
 		#add the nodes to the graph, connecting it to nodes in the graph that it is connected to.
 	    # go through the list of edges that have the new node as a part of it, and only add the edge if they are between the new node and a node in the graph already.
 		rels = list(graph_db.match(start_node=new_node)) #query graph for edges from that node
@@ -524,8 +525,16 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 		df = pd.DataFrame(data, columns= ('nodegrowth','edgegrowth', 'modval','maxclique','avgclique','run_time'))
 		return (graph, df)
 
-def build():
-	
+def build(return_partition=True, return_modval = True, return_graph= True, verbose = True):
+	"""
+	This build the entire graph from the database and returns the partition and modularity value.
+
+	Parameters
+	return_partition = True
+	return_modval = True
+	return_partition = True
+
+	"""
 	graph_db = database()
 	#get the pickled dictionary of nodes and node names (for the database) that is made while the csv file is loaded.
 	try:
@@ -534,52 +543,55 @@ def build():
 	except:
 		print 'Your graph is empty. Please load a graph into the database.'
 		1/0
-
+	graph = nx.DiGraph()
 	for node in nodes:
-		graph = nx.DiGraph()
 		new_node = node
 		new_node = nodes[new_node]
 		rels = list(graph_db.match(start_node=new_node)) #query graph for edges from that node
-				for edge in rels:
-					#get the string name of the node
-				    newnodename = edge.start_node.get_properties()
-				    newnodename = newnodename.get('name')
-				    newnodename = newnodename.encode()
-				    endnodename = edge.end_node.get_properties()
-				    endnodename = endnodename.get('name')
-				    endnodename = endnodename.encode()
-				    if newnodename not in graph: #check to see if new node is in graph
-				        graph.add_node(newnodename) # add if not
-				        if verbose:
-				            print 'added ' + str(newnodename)
-				    if endnodename in graph: #check to see if end node is in graph
-				        graph.add_edge(newnodename, endnodename) #add it if it is
-				        if verbose:
-				            print 'connected ' + newnodename +' to '+ endnodename
+		for edge in rels:
+			#get the string name of the node
+		    newnodename = edge.start_node.get_properties()
+		    newnodename = newnodename.get('name')
+		    newnodename = newnodename.encode()
+		    endnodename = edge.end_node.get_properties()
+		    endnodename = endnodename.get('name')
+		    endnodename = endnodename.encode()
+		    if newnodename not in graph: #check to see if new node is in graph
+		        graph.add_node(newnodename) # add if not
+		        if verbose:
+		            print 'added ' + str(newnodename)
+		    if endnodename in graph: #check to see if end node is in graph
+		        graph.add_edge(newnodename, endnodename) #add it if it is
+		        if verbose:
+		            print 'connected ' + newnodename +' to '+ endnodename
 
-				rels = list(graph_db.match(end_node=new_node)) #query graph for edges to that node
-				for edge in rels:
-				    newnodename = edge.end_node.get_properties()
-				    newnodename = newnodename.get('name')
-				    newnodename = newnodename.encode()
-				    startnodename = edge.start_node.get_properties()
-				    startnodename = startnodename.get('name')
-				    startnodename = startnodename.encode()
-				    if newnodename not in graph: #check to see if new node is in graph
-				        graph.add_node(newnodename) # add if not
-				        if verbose:
-				            print 'added ' + str(newnodename)
-				    if startnodename in graph: #check to see if end node is in graph
-				        graph.add_edge(startnodename, newnodename) #add it if it is
-				        if verbose:
-				            print 'connected ' + startnodename +' to '+ newnodename
-						#measure the nodegrowth and edge growth
-				nodegrowth = len(graph.nodes())
-				edgegrowth = len(graph.edges())
-				if verbose:
-					print 'Graph has ' + str(nodegrowth) + ' nodes.'
-				if verbose:
-				    print 'Graph has ' + str(edgegrowth) + ' edges.'
+		rels = list(graph_db.match(end_node=new_node)) #query graph for edges to that node
+		for edge in rels:
+		    newnodename = edge.end_node.get_properties()
+		    newnodename = newnodename.get('name')
+		    newnodename = newnodename.encode()
+		    startnodename = edge.start_node.get_properties()
+		    startnodename = startnodename.get('name')
+		    startnodename = startnodename.encode()
+		    if newnodename not in graph: #check to see if new node is in graph
+		        graph.add_node(newnodename) # add if not
+		        if verbose:
+		            print 'added ' + str(newnodename)
+		    if startnodename in graph: #check to see if end node is in graph
+		        graph.add_edge(startnodename, newnodename) #add it if it is
+		        if verbose:
+		            print 'connected ' + startnodename +' to '+ newnodename
+				#measure the nodegrowth and edge growth
+		nodegrowth = len(graph.nodes())
+		edgegrowth = len(graph.edges())
+		if verbose:
+			print 'Graph has ' + str(nodegrowth) + ' nodes.'
+		if verbose:
+		    print 'Graph has ' + str(edgegrowth) + ' edges.'
+	modgraph = nx.Graph(graph) #make it into a undirected networkx graph. This measures moduilarity on undirected version of graph! 
+	partition = best_partition(modgraph) #find the partition with maximal modularity
+	modval = modularity(partition,modgraph) #calculate modularity with that partition
+	return graph, partition, modval
 
 #this is the community finding stuff and networkx bayes stuff. I did not write ANY this...
 
