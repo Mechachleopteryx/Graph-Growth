@@ -209,7 +209,7 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 	        sparsemeasurements.append(int(x))
 	else:
 		sparsemeasurements = range(2,growthfactor)
-
+	print 'Measuring graph at: ' + str(sparsemeasurements) 
 	# this will actually only work for directed graph because we are moralizing, but I want to leave the option for later. Perhaps I can just skip moralization for undirected graphs.
 	if directed:
 		graph = nx.DiGraph()
@@ -523,6 +523,63 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 	if random == False:
 		df = pd.DataFrame(data, columns= ('nodegrowth','edgegrowth', 'modval','maxclique','avgclique','run_time'))
 		return (graph, df)
+
+def build():
+	
+	graph_db = database()
+	#get the pickled dictionary of nodes and node names (for the database) that is made while the csv file is loaded.
+	try:
+		nodes = open('nodes.p','r')
+		nodes = pickle.load(nodes)
+	except:
+		print 'Your graph is empty. Please load a graph into the database.'
+		1/0
+
+	for node in nodes:
+		graph = nx.DiGraph()
+		new_node = node
+		new_node = nodes[new_node]
+		rels = list(graph_db.match(start_node=new_node)) #query graph for edges from that node
+				for edge in rels:
+					#get the string name of the node
+				    newnodename = edge.start_node.get_properties()
+				    newnodename = newnodename.get('name')
+				    newnodename = newnodename.encode()
+				    endnodename = edge.end_node.get_properties()
+				    endnodename = endnodename.get('name')
+				    endnodename = endnodename.encode()
+				    if newnodename not in graph: #check to see if new node is in graph
+				        graph.add_node(newnodename) # add if not
+				        if verbose:
+				            print 'added ' + str(newnodename)
+				    if endnodename in graph: #check to see if end node is in graph
+				        graph.add_edge(newnodename, endnodename) #add it if it is
+				        if verbose:
+				            print 'connected ' + newnodename +' to '+ endnodename
+
+				rels = list(graph_db.match(end_node=new_node)) #query graph for edges to that node
+				for edge in rels:
+				    newnodename = edge.end_node.get_properties()
+				    newnodename = newnodename.get('name')
+				    newnodename = newnodename.encode()
+				    startnodename = edge.start_node.get_properties()
+				    startnodename = startnodename.get('name')
+				    startnodename = startnodename.encode()
+				    if newnodename not in graph: #check to see if new node is in graph
+				        graph.add_node(newnodename) # add if not
+				        if verbose:
+				            print 'added ' + str(newnodename)
+				    if startnodename in graph: #check to see if end node is in graph
+				        graph.add_edge(startnodename, newnodename) #add it if it is
+				        if verbose:
+				            print 'connected ' + startnodename +' to '+ newnodename
+						#measure the nodegrowth and edge growth
+				nodegrowth = len(graph.nodes())
+				edgegrowth = len(graph.edges())
+				if verbose:
+					print 'Graph has ' + str(nodegrowth) + ' nodes.'
+				if verbose:
+				    print 'Graph has ' + str(edgegrowth) + ' edges.'
 
 #this is the community finding stuff and networkx bayes stuff. I did not write ANY this...
 
