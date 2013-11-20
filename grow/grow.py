@@ -257,7 +257,9 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 		
 		if force_connected == False: # if not connected, we can just pick from the pickled dictionary of nodes in the database
 			new_node = np.random.choice(possiblenodes.values())
-			
+		
+		# you need to figure out a way to not try to add nodes already in graph. just store them in list and check the list. This will be faster. 
+
 		#add the nodes to the graph, connecting it to nodes in the graph that it is connected to.
 	    # go through the list of edges that have the new node as a part of it, and only add the edge if they are between the new node and a node in the graph already.
 		rels = list(graph_db.match(start_node=new_node)) #query graph for edges from that node
