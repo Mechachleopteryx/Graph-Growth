@@ -525,7 +525,15 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 		return (graph, df)
 
 def build(return_partition=True, return_modval = True, return_partition):
-	
+	"""
+	This build the entire graph from the database and returns the partition and modularity value.
+
+	Parameters
+	return_partition = True
+	return_modval = True
+	return_partition = True
+
+	"""
 	graph_db = database()
 	#get the pickled dictionary of nodes and node names (for the database) that is made while the csv file is loaded.
 	try:
