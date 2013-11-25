@@ -1,0 +1,7 @@
+DB_ENGINE = "sqlite3"
+DB_NAME = "ConceptNet.db"
+DB_HOST = ""
+DB_PORT = ""
+DB_USER = ""
+DB_PASSWORD = ""
+DB_SCHEMAS = ""
