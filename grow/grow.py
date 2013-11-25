@@ -381,10 +381,8 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 			          if degrees[key] == x:
 			            order.append(key)
 
-
-			# this produces shitty triangulation
-			# order = range(len(moralized)+1) # BNT needs order of nodes to triangulate
-			# order = order[1:]
+			triorder = range(len(moralized)+1) # BNT needs order of nodes to triangulate
+			triorder = triorder[1:]
 			
 			if random == True:
 				random_order = range(len(random_moralized)+1) # BNT needs order of nodes to triangulate
@@ -394,11 +392,11 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 			tries = 0
 			while istriangulated == False and tries < 5: #sometimes oct2py takes too long to return I think
 				try:
-				    moralized = nx.to_numpy_matrix(moralized)  # have to make it into matrix.
-				    triangulated, cliques, fill_ins = octave.triangulate(moralized,order)
+				    moralized = nx.to_numpy_matrix(moralized,order)  # have to make it into matrix.
+				    triangulated, cliques, fill_ins = octave.triangulate(moralized,triorder)
 				    if random == True:
-				    	random_moralized = nx.to_numpy_matrix(random_moralized) # have to make it into matrix.
-				    	random_triangulated, random_cliques, random_fill_ins = octave.triangulate(random_moralized, random_order)
+				    	random_moralized = nx.to_numpy_matrix(random_moralized,order) # have to make it into matrix.
+				    	random_triangulated, random_cliques, random_fill_ins = octave.triangulate(random_moralized, triorder)
 				    istriangulated = True
 				    tries = 5
 				except:
