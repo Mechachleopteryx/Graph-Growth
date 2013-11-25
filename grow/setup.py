@@ -9,7 +9,7 @@ import os
 #oct2py
 os.system('pip install oct2py')
 #homebrew
-os.system('ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go)"')
+os.system('ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go/install)”')
 
 #Get Octave! 
 os.system('brew tap homebrew/science')

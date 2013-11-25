@@ -377,8 +377,9 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 			order = range(len(moralized)+1) # BNT needs order of nodes to triangulate
 			order = order[1:]
 			
-			random_order = range(len(random_moralized)+1) # BNT needs order of nodes to triangulate
-			random_order = random_order[1:] # I think you have to shift the space because you are going from 0 index to 1 idndex
+			if random == True:
+				random_order = range(len(random_moralized)+1) # BNT needs order of nodes to triangulate
+				random_order = random_order[1:] # I think you have to shift the space because you are going from 0 index to 1 idndex
 			
 			istriangulated = False
 			tries = 0
