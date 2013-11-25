@@ -374,11 +374,21 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 				        print 'Octave Error, trying again!'
 				        tries = tries + 1
 			
-			order = range(len(moralized)+1) # BNT needs order of nodes to triangulate
-			order = order[1:]
+			degrees = graph.degree()
+			order =[]
+			for x in range(len(degrees)):
+				for key in degrees.keys():
+			          if degrees[key] == x:
+			            order.append(key)
+
+
+			# this produces shitty triangulation
+			# order = range(len(moralized)+1) # BNT needs order of nodes to triangulate
+			# order = order[1:]
 			
-			random_order = range(len(random_moralized)+1) # BNT needs order of nodes to triangulate
-			random_order = random_order[1:] # I think you have to shift the space because you are going from 0 index to 1 idndex
+			if random == True:
+				random_order = range(len(random_moralized)+1) # BNT needs order of nodes to triangulate
+				random_order = random_order[1:] # I think you have to shift the space because you are going from 0 index to 1 idndex
 			
 			istriangulated = False
 			tries = 0
