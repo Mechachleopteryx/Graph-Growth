@@ -203,7 +203,7 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 
 	# here we figure out at what points to measure if the user wants a spare measumement or to measure every time a node is added. This speeds up big graph growths a lot! 
 	if sparse == True:
-	    sparsemeasurements = [10,15,growthfactor]
+	    sparsemeasurements = [10,15,2000,3500,5000,growthfactor]
 	    measurements = np.logspace(1, (int(len(str(growthfactor))))-1, num_measurements)
 	    for x in measurements:
 	        sparsemeasurements.append(int(x))
