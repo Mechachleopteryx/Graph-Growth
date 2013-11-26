@@ -532,7 +532,6 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 						plt.xlim(-0.05,1.05)
 						plt.ylim(-0.05,1.05)
 						plt.axis('off')
-
 					plt.show()
 		if random == True:
 			df = pd.DataFrame(data, columns= ('nodegrowth', 'edgegrowth', 'modval','random_modval', 'maxclique', 'random_maxclique', 'avgclique', 'random_avgclique', 'run_time'))
