@@ -205,7 +205,7 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 
 		# here we figure out at what points to measure if the user wants a spare measumement or to measure every time a node is added. This speeds up big graph growths a lot! 
 		if sparse == True:
-		    sparsemeasurements = [5,6,7,8,9,10,growthfactor]
+		    sparsemeasurements = [growthfactor]
 		    measurements = np.logspace(1, (int(len(str(growthfactor)))), num=num_measurements)
 		    for x in measurements:
 		        sparsemeasurements.append(int(x))
@@ -214,7 +214,7 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 					sparsemeasurements.remove(x) #logspace is hard to build on the fly, so sometimes it has values over the growthfactor, so we remove them.
 
 		else:
-			sparsemeasurements = range(5,growthfactor)
+			sparsemeasurements = range(10,growthfactor)
 		print 'Measuring graph at: ' + str(sparsemeasurements) 
 		# this will actually only work for directed graph because we are moralizing, but I want to leave the option for later. Perhaps I can just skip moralization for undirected graphs.
 		if directed:
@@ -456,6 +456,7 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 					if random == False:
 						df = pd.DataFrame(data, columns= ('nodegrowth','edgegrowth', 'modularity','maxclique','avgclique','run_time'))
 						plt.close()
+						plt.ion()
 						fig = plt.figure(figsize=(24,16))
 						ax = fig.add_subplot(1,1,1)
 						ax2 = ax.twinx()
@@ -470,14 +471,17 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 						plt.suptitle('Graph Growth', fontsize=30)
 						plt.legend((line1,line2),(ploty , ploty2), loc='upper center', frameon=False, fontsize=20)
 						plt.show()
+						plt.draw()
 
 					if random == True:
 						df = pd.DataFrame(data, columns= ('nodegrowth', 'edgegrowth', 'modval','random_modval', 'maxclique', 'random_maxclique', 'avgclique', 'random_avgclique', 'run_time'))
 						plt.close()
+						plt.ion()
 						fig = plt.figure(figsize=(18,10))
 						ax = fig.add_subplot(1,1,1)
 						ax2 = ax.twinx()
-						ax3 = ax.twinx()
+						ticks = [0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1]
+						ax2.set_yticks(ticks)
 						y1 = df[ploty]
 						y2 = df[ploty2]
 						y3def = str('random_'+ploty) # i just add random to whatever the user inputs as the y stuff they want to plot
@@ -489,12 +493,13 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 						line1, = ax.plot(x, y1, label = ploty, color = 'blue')
 						line2, = ax2.plot(x, y2, label = ploty2, color = 'green')
 						line3, = ax.plot(x,y3, label = y3def, color = 'red')
-						line4, = ax3.plot(x,y4, label = y4def, color = 'cyan')
+						line4, = ax2.plot(x,y4, label = y4def, color = 'cyan')
 						ax.set_ylabel(ploty,fontsize=20)
 						ax2.set_ylabel(ploty2, fontsize=20)
 						plt.suptitle('Graph Growth', fontsize=30)
 						plt.legend((line1,line2,line3,line4), (ploty,ploty2,y3def,y4def),loc='upper center', frameon=False, fontsize=20)#
 						plt.show()
+						plt.draw()
 				#draw the graph 
 				if draw == True:
 					if drawgraph == 'triangulated':
