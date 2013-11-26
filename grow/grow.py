@@ -121,7 +121,9 @@ def load_graph(csvfile):
 def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = False, totalrandom = False, usenx= True, force_connected = True, sparse = True, plot = False, directed = True, wholegrowth=False,growthfactor=100, num_measurements = 10, verbose = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modval',drawgraph = 'triangulated', draw= True, drawspectral = True, getgraph = True):
 	"""
 	This function takes a graph that was loaded using load_graph and grows it,
-	meauring modularity and clique size.
+	meauring modularity and clique size. Modularity is found via a partition using 
+	the Louvain algorithm--Blondel, V.D. et al. Fast unfolding of communities in large networks. J. Stat. Mech 10008, 1-12(2008)--
+	and the Modularity value is Newman's Q--Newman, M.E.J. & Girvan, M. Finding and evaluating community structure in networks. Physical Review E 69, 26113(2004).
 
 	Parameters:
 	growthfactor: int, How many nodes do you want to grow your graph to? Default: 100
@@ -604,7 +606,8 @@ def build(return_partition=True, return_modval = True, return_graph= True, verbo
 	modval = modularity(partition,modgraph) #calculate modularity with that partition
 	return graph, partition, modval
 
-#this is the community finding stuff and networkx bayes stuff. I did not write ANY this...
+#________________________________________________________________________________________________________________________________________________________
+# this is the community finding stuff and networkx bayes stuff. I did not write ANY this...
 
 
 def markov_blanket(G, n):
