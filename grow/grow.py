@@ -1,7 +1,6 @@
 import sys
 import scipy
 from scipy import io
-# import community #I just copied and pasted this so it is available in here 
 from networkx import chordal_alg
 import random
 import networkx as nx
@@ -374,6 +373,10 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 				        print 'Octave Error, trying again!'
 				        tries = tries + 1
 			
+			#the triangulation works better if you pass it an order of the nodes based on minimal degree. 
+			#netowk x can make the matrix in any node order, so I made the matrix in order of minimal degree
+			#then, below I just use an order of 1 to the length of the matrix, which is fine because the matrix is already in the right order for triangulation
+			# I use this in both the random and real graphs to make the matrixes to pass to MATLAB functions
 			degrees = graph.degree()
 			order =[]
 			for x in range(len(degrees)):
