@@ -97,8 +97,7 @@ def load_graph(csvfile):
 
 	# get the graph database server going.
 	graph_db = database()
-	if verbose:
-		print 'started new graph database'
+	print 'started new graph database'
 
 	#make sure graph DB initialized 
 	print 'Graph Version: ' + str(graph_db.neo4j_version)
