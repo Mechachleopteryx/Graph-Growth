@@ -168,7 +168,7 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 	the grown graph, the random growth graph(only if one is grown), dataframe of measurements
 
 	"""
-
+	Errors = 0
 	try:# I do this so if the computation is taking a long time you can exit out but save all the previous data that was being collected; the except is way at the bottom! 
 		random = False #set as false, gets made to truth later if the user passes a type of random graph they want
 
@@ -250,7 +250,13 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 
 				fromnode = nodes[fromnode] #get DB version of the node.
 				#get all relationships in graph DB for that node so we can pick 
-				new_node_rels = list(graph_db.match(end_node = fromnode, bidirectional=True))
+				tries = 0
+				while tries < 5:
+					try:
+						new_node_rels = list(graph_db.match(end_node = fromnode, bidirectional=True))
+						tries = 5
+					except:
+						tries = tries + 1 
 				new_rel = Random.choice(new_node_rels) #randomly pick one of them, thus picking a node to add to graph. This uses the random module, not np.random
 
 				# is the new node a parent or child of the node we are growing from?
@@ -265,7 +271,13 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 			if new_node not in nodes_in_graph: #check to see if the node it found is already in graph already. Add it if it is not in there.
 				#add the nodes to the graph, connecting it to nodes in the graph that it is connected to.
 			    # go through the list of edges that have the new node as a part of it, and only add the edge if they are between the new node and a node in the graph already.
-				rels = list(graph_db.match(start_node=new_node)) #query graph for edges from that node
+				tries = 0
+				while tries < 5:
+					try:
+						rels = list(graph_db.match(start_node=new_node)) #query graph for edges from that node
+						tries = 5
+					except:
+						tries = tries + 1 
 				for edge in rels:
 					#get the string name of the node
 				    newnodename = edge.start_node.get_properties()
@@ -282,8 +294,13 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 				        graph.add_edge(newnodename, endnodename) #add it if it is
 				        if verbose:
 				            print 'connected ' + newnodename +' to '+ endnodename
-
-				rels = list(graph_db.match(end_node=new_node)) #query graph for edges to that node
+				tries = 0
+				while tries < 5:
+					try:
+						rels = list(graph_db.match(end_node=new_node)) #query graph for edges to that node
+						tries = 5
+					except:
+						tries = tries + 1
 				for edge in rels:
 				    newnodename = edge.end_node.get_properties()
 				    newnodename = newnodename.get('name')
