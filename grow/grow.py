@@ -271,6 +271,7 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 			if new_node not in nodes_in_graph: #check to see if the node it found is already in graph already. Add it if it is not in there.
 				#add the nodes to the graph, connecting it to nodes in the graph that it is connected to.
 			    # go through the list of edges that have the new node as a part of it, and only add the edge if they are between the new node and a node in the graph already.
+				nodes_in_graph.append(new_node)
 				tries = 0
 				while tries < 5:
 					try:
