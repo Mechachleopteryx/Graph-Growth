@@ -72,7 +72,7 @@ def database():
 
 
 #loads in the csv file into the database.
-def load_graph(csvfile):	
+def load_graph(csvfile,indexcol=False):	
 	"""
 	Load your graph into the database. This function allows you to load any graph
 	into memory and then you can use the grow_graph function to grow and measure it.
@@ -96,7 +96,7 @@ def load_graph(csvfile):
 	"""
 
 	# get the graph database server going.
-	graph_db = database()
+	graph_db = database() # I could set this up to support multiple databases and graphs...maybe just ask for a graph name.
 	print 'started new graph database'
 
 	#make sure graph DB initialized 
@@ -109,11 +109,21 @@ def load_graph(csvfile):
 	        nodes[name], = graph_db.create(node(name=name)) #make the node if it doesn't exist 
 	    return nodes[name] #return the node
 	print 'Loading graph into database...'
-	for row in reader:
-	    parent = get_or_create_node(graph_db, row[0])
-	    child = get_or_create_node(graph_db, row[1])
-	    parent_child, = graph_db.create(rel(parent, "--", child)) 
-	print 'Loaded graph into database'
+	errors = 0
+	while errors <100:
+		try:
+			for row in reader:
+				if indexcol == True:
+				    parent = get_or_create_node(graph_db, row[1])
+				    child = get_or_create_node(graph_db, row[2])
+				    parent_child, = graph_db.create(rel(parent, "--", child))
+				else:
+				    parent = get_or_create_node(graph_db, row[0])
+				    child = get_or_create_node(graph_db, row[1])
+				    parent_child, = graph_db.create(rel(parent, "--", child)) 
+		except:
+			errors = errors + 1 
+	print 'Loaded graph into database' + ' with ' + str(errors) + ' errors.'
 	pickle.dump(nodes, open("nodes.p", "wb" ) )
 
 #this does all the growth and measurement stuff.
@@ -267,7 +277,7 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 			
 			if force_connected == False: # if not connected, we can just pick from the pickled dictionary of nodes in the database
 				new_node = np.random.choice(possiblenodes.values())
-			
+			# I think that nodes that are connected to low-degree nodes have the best chance of being added early. 
 			if new_node not in nodes_in_graph: #check to see if the node it found is already in graph already. Add it if it is not in there.
 				#add the nodes to the graph, connecting it to nodes in the graph that it is connected to.
 			    # go through the list of edges that have the new node as a part of it, and only add the edge if they are between the new node and a node in the graph already.
@@ -471,7 +481,7 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 				#this will redraw the plot everytime a computation is done.
 				if plot == True:
 					if random == False:
-						df = pd.DataFrame(data, columns= ('nodegrowth','edgegrowth', 'modularity','maxclique','avgclique','run_time'))
+						df = pd.DataFrame(data, columns= ('nodegrowth','edgegrowth', 'modval','maxclique','avgclique','run_time'))
 						plt.close()
 						plt.ion()
 						fig = plt.figure(figsize=(24,16))
