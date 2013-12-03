@@ -124,7 +124,10 @@ def load_graph(csvfile,indexcol=False):
 			errors = 1000
 		except:
 			errors = errors + 1 
-	print 'Loaded graph into database' + ' with ' + str(errors) + ' errors.'
+	if errors == 1000:
+		print 'Loaded graph into database with zero errors.'
+	else:
+		print 'Loaded graph into database with zero' + str(errors) + 'errors.' 
 	pickle.dump(nodes, open("nodes.p", "wb" ) )
 
 #this does all the growth and measurement stuff.
