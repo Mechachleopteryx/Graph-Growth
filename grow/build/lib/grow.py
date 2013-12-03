@@ -97,10 +97,10 @@ def load_graph(csvfile,indexcol=False):
 
 	# get the graph database server going.
 	graph_db = database() # I could set this up to support multiple databases and graphs...maybe just ask for a graph name.
-	print 'started new graph database'
+	print 'Started new graph database'
 
 	#make sure graph DB initialized 
-	print 'Graph Version: ' + str(graph_db.neo4j_version)
+	print 'Graph Database  Version: ' + str(graph_db.neo4j_version)
 	csvfile = open(csvfile)
 	reader = csv.reader(csvfile,delimiter=',')
 	nodes = {} # keep track of nodes already in graph_db.
