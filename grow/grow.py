@@ -127,7 +127,56 @@ def load_graph(csvfile,indexcol=False):
 	if errors == 1000:
 		print 'Loaded graph into database with zero errors.'
 	else:
-		print 'Loaded graph into database with zero' + str(errors) + 'errors.' 
+		print 'Loaded graph into database with: ' + str(errors) + 'errors.' 
+	pickle.dump(nodes, open("nodes.p", "wb" ) )
+
+def load_graph_force_no_errors(csvfile,indexcol=False):	
+	"""
+	Load your graph into the database, making sure that no errors occur. This function allows you to load any graph
+	into memory and then you can use the grow_graph function to grow and measure it.
+	You must load a graph in this way to use the grow_graph function.
+
+	Simply pass in your CSV file. It assumes the 0 column is the parent node, and 1
+	is the child node. Each line is an edge.
+
+	It will save a pickled file in the nodes it added to the database for later use.
+	This means that you need to be running this function and the graph_grow function
+	from the same directory.
+
+	If you want to delete the database,
+	$ cd /usr/local/Cellar/neo4j/1.9.4/libexec/data
+	$ os.command(rm -R graph_db)
+
+	Parameters:
+
+	csvfile: load in your csvfile that is the edges in your graph.
+
+	"""
+
+	# get the graph database server going.
+	graph_db = database() # I could set this up to support multiple databases and graphs...maybe just ask for a graph name.
+	print 'Started new graph database'
+
+	#make sure graph DB initialized 
+	print 'Graph Database  Version: ' + str(graph_db.neo4j_version)
+	csvfile = open(csvfile)
+	reader = csv.reader(csvfile,delimiter=',')
+	nodes = {} # keep track of nodes already in graph_db.
+	def get_or_create_node(graph_db, name):
+	    if name not in nodes:
+	        nodes[name], = graph_db.create(node(name=name)) #make the node if it doesn't exist 
+	    return nodes[name] #return the node
+	print 'Loading graph into database...'
+	for row in reader:
+		if indexcol == True:
+		    parent = get_or_create_node(graph_db, row[1])
+		    child = get_or_create_node(graph_db, row[2])
+		    parent_child, = graph_db.create(rel(parent, "--", child))
+		else:
+		    parent = get_or_create_node(graph_db, row[0])
+		    child = get_or_create_node(graph_db, row[1])
+		    parent_child, = graph_db.create(rel(parent, "--", child)) 
+	print 'Loaded graph into database with.'
 	pickle.dump(nodes, open("nodes.p", "wb" ) )
 
 #this does all the growth and measurement stuff.
@@ -137,6 +186,8 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 	meauring modularity and clique size. Modularity is found via a partition using 
 	the Louvain algorithm--Blondel, V.D. et al. Fast unfolding of communities in large networks. J. Stat. Mech 10008, 1-12(2008)--
 	and the Modularity value is Newman's Q--Newman, M.E.J. & Girvan, M. Finding and evaluating community structure in networks. Physical Review E 69, 26113(2004).
+
+	Some computations on very large graphs (over 10,000 nodes) take a long time. Because of this, if you get antsy and KeyboardInterrupt, all collected data will still be outputed.
 
 	Parameters:
 	growthfactor: int, How many nodes do you want to grow your graph to? Default: 100
@@ -182,7 +233,7 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 	the grown graph, the random growth graph(only if one is grown), dataframe of measurements
 
 	"""
-	Errors = 0
+
 	try:# I do this so if the computation is taking a long time you can exit out but save all the previous data that was being collected; the except is way at the bottom! 
 		random = False #set as false, gets made to truth later if the user passes a type of random graph they want
 
@@ -531,7 +582,7 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 						plt.legend((line1,line2,line3,line4), (ploty,ploty2,y3def,y4def),loc='upper center', frameon=False, fontsize=20)#
 						plt.show()
 						plt.draw()
-				#draw the graph 
+				#draw the graph every time a computation is done.
 				if draw == True:
 					if drawgraph == 'triangulated':
 						G = nx.from_numpy_matrix(triangulated)
@@ -540,9 +591,10 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 					elif drawgraph == 'directed':
 						G = graph
 					plt.close()
+					plt.ion()
 					
 					if drawspectral == True:
-						nx.draw_random(G, prog='neato')
+						nx.draw_spectral(G) #prog='neato'
 					else:
 						pos = nx.random_layout(G)
 						# find node near center (0.5,0.5)
@@ -555,7 +607,6 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 						        ncenter=n
 						        dmin=d
 
-						# color by path length from node near center
 						p=nx.single_source_shortest_path_length(G,ncenter)
 						plt.figure(figsize=(15,15))
 						plt.suptitle(drawgraph + ' graph')
@@ -568,6 +619,7 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 						plt.xlim(-0.05,1.05)
 						plt.ylim(-0.05,1.05)
 						plt.axis('off')
+					plt.draw()
 					plt.show()
 		if random == True:
 			df = pd.DataFrame(data, columns= ('nodegrowth', 'edgegrowth', 'modval','random_modval', 'maxclique', 'random_maxclique', 'avgclique', 'random_avgclique', 'run_time'))
@@ -575,7 +627,7 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 		if random == False:
 			df = pd.DataFrame(data, columns= ('nodegrowth','edgegrowth', 'modval','maxclique','avgclique','run_time'))
 			return (graph, df)
-	# I do this so if the computation is takign a long time you can exit out but save all the previous data that was being collected
+	# I do this so if the computation is taking a long time you can exit out but save all the previous data that was being collected
 	except KeyboardInterrupt:
 		if random == True:
 			df = pd.DataFrame(data, columns= ('nodegrowth', 'edgegrowth', 'modval','random_modval', 'maxclique', 'random_maxclique', 'avgclique', 'random_avgclique', 'run_time'))
