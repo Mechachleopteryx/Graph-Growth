@@ -276,9 +276,11 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 			for x in sparsemeasurements:
 				if x > (growthfactor+1):
 					sparsemeasurements.remove(x) #logspace is hard to build on the fly, so sometimes it has values over the growthfactor, so we remove them.
+				if x < 10:
+					sparsemeasurements.remove(x) #sometimes no cliques exist in a graph this small.
 
 		else:
-			sparsemeasurements = range(10,growthfactor)
+			sparsemeasurements = range(25,growthfactor)
 		print 'Measuring graph at: ' + str(sparsemeasurements) 
 		# this will actually only work for directed graph because we are moralizing, but I want to leave the option for later. Perhaps I can just skip moralization for undirected graphs.
 		if directed:
@@ -431,11 +433,50 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 					random = True
 
 				start_time = time()
-				# if nodegrowth > 5: #poin
 				# 	#calculate modularity
 				modgraph = nx.Graph(graph) #make it into a undirected networkx graph. This measures moduilarity on undirected version of graph! 
 				partition = best_partition(modgraph) #find the partition with maximal modularity
 				modval = modularity(partition,modgraph) #calculate modularity with that partition
+
+				#drop edges to make "random" graph more modular. It is after the modularity on the regular graph because we need the partition from the real graph to make this "random" one.
+				random_modular = True
+				if random_modular == True:
+					random = True
+					percent_drop = .9 #what percentage of the between module edges do we drop?
+					#find out how many edges exist between modules
+					print 'calculating between module edges'
+					edges = graph.edges()
+					between_mod_edges = 0
+					for edge in edges:
+						node1 = edge[0]
+						node2 = edge[1]
+						if not partition[node1] == partition[node2]:
+							between_mod_edges = between_mod_edges + 1 
+					edgedrop = (float(between_mod_edges)) * percent_drop #might want to make this for just edges between. would need to calcualte number of edges between modules.
+					print 'dropping ' + str(edgedrop) + ' edges out of ' + str(len(graph.edges()))
+					random_graph = graph.copy()
+					#get edges from graph
+					edges_dropped = 0 # keep track of number of edges we drop, do dropping untill we get to edge drop
+					print 'dropping edges between modules'
+					while edges_dropped < edgedrop:
+						edges = random_graph.edges()
+						edge = Random.choice(random_graph.edges())
+						node1 = edge[0]
+						node2 = edge[1]
+						if not partition[node1] == partition[node2]: #make sure we pick an edge that is between modules
+							random_graph.remove_edge(node1,node2)
+							edges_dropped = edges_dropped + 1
+							# add edge to keep edges in graph identical
+							added_within = False
+							while added_within == False:
+								node1 = Random.choice(random_graph.nodes())
+								node2 = Random.choice(random_graph.nodes())
+								if partition[node1] == partition[node2]: #make sure they are in the same module
+									if not (node1,node2) in random_graph.edges(): #make sure the edge doens't already exist
+										random_graph.add_edge(node1,node2)
+										added_within = True
+
+
 				sleep(2)
 				if random == True:
 					random_modgraph = random_graph.to_undirected() #make it into a undirected networkx graph. This measures moduilarity on undirected version of graph! 
@@ -623,18 +664,18 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 					plt.show()
 		if random == True:
 			df = pd.DataFrame(data, columns= ('nodegrowth', 'edgegrowth', 'modval','random_modval', 'maxclique', 'random_maxclique', 'avgclique', 'random_avgclique', 'run_time'))
-			return(graph, random_graph, df)
+			return(graph, partition, random_graph, df)
 		if random == False:
 			df = pd.DataFrame(data, columns= ('nodegrowth','edgegrowth', 'modval','maxclique','avgclique','run_time'))
-			return (graph, df)
+			return (graph, partition, df)
 	# I do this so if the computation is taking a long time you can exit out but save all the previous data that was being collected
 	except KeyboardInterrupt:
 		if random == True:
 			df = pd.DataFrame(data, columns= ('nodegrowth', 'edgegrowth', 'modval','random_modval', 'maxclique', 'random_maxclique', 'avgclique', 'random_avgclique', 'run_time'))
-			return(graph, random_graph, df)
+			return(graph, partition, random_graph, df)
 		if random == False:
 			df = pd.DataFrame(data, columns= ('nodegrowth','edgegrowth', 'modval','maxclique','avgclique','run_time'))
-			return (graph, df)
+			return (graph, partition, df)
 
 def build(return_partition=True, return_modval = True, return_graph= True, verbose = True):
 	"""
