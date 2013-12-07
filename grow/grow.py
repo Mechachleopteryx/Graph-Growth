@@ -19,7 +19,7 @@ import matplotlib.pylab as plt
  
 
 #this does the whole shebang!
-def grow(csvfile, reverserandom=False, outgoingrandom = True, incomingrandom = False, totalrandom = False,getgraph = True, drawspectral = True, force_connected = True, usenx= True, sparse = True, plot = False, directed = True, wholegrowth=False,growthfactor=100, num_measurements = 10, verbose = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modval',drawgraph = 'triangulated', draw= True):
+def grow(csvfile, reverserandom=False, outgoingrandom = True, random_modular = False, incomingrandom = False, totalrandom = False,getgraph = True, drawspectral = True, force_connected = True, sparse = True, plot = False, directed = True, wholegrowth=False,growthfactor=100, num_measurements = 10, verbose = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modval',drawgraph = 'triangulated', draw= True):
 	"""
 	This function will load your graph and grow it. 
 	It takes in the same parameters as load_graph and grow_graph, and does it all at once.
@@ -31,11 +31,11 @@ def grow(csvfile, reverserandom=False, outgoingrandom = True, incomingrandom = F
 	
 	"""
 	load_graph(csvfile = csvfile)
-	if reverserandom or outgoingrandom or incomingrandom or totalrandom == True:
-		graph, randomgraph, data = grow_graph(reverserandom=reverserandom, outgoingrandom = outgoingrandom, incomingrandom = incomingrandom, totalrandom = totalrandom, usenx= usenx, getgraph = getgraph, drawspectral = drawspectral, force_connected = force_connected, sparse = sparse, plot = plot, directed = directed, wholegrowth=wholegrowth,growthfactor=growthfactor, num_measurements = num_measurements, verbose = verbose, plotx = plotx, ploty = ploty, ploty2 = ploty2, drawgraph = drawgraph, draw= draw)
+	if reverserandom or outgoingrandom or incomingrandom or random_modular or totalrandom == True:
+		graph, randomgraph, data = grow_graph(reverserandom=reverserandom, outgoingrandom = outgoingrandom, incomingrandom = incomingrandom, totalrandom = totalrandom, random_modular = random_modular, getgraph = getgraph, drawspectral = drawspectral, force_connected = force_connected, sparse = sparse, plot = plot, directed = directed, wholegrowth=wholegrowth,growthfactor=growthfactor, num_measurements = num_measurements, verbose = verbose, plotx = plotx, ploty = ploty, ploty2 = ploty2, drawgraph = drawgraph, draw= draw)
 		return graph, randomgraph, data
 	else: 
-		graph, data = grow_graph(reverserandom=reverserandom, outgoingrandom = outgoingrandom, incomingrandom = incomingrandom, totalrandom = totalrandom, usenx= usenx, getgraph = getgraph, drawspectral = drawspectral, force_connected = force_connected, sparse = sparse, plot = plot, directed = directed, wholegrowth=wholegrowth,growthfactor=growthfactor, num_measurements = num_measurements, verbose = verbose, plotx = plotx, ploty = ploty, ploty2 = ploty2, drawgraph = drawgraph, draw= draw)
+		graph, data = grow_graph(reverserandom=reverserandom, outgoingrandom = outgoingrandom, incomingrandom = incomingrandom, random_modular = random_modular, totalrandom = totalrandom, getgraph = getgraph, drawspectral = drawspectral, force_connected = force_connected, sparse = sparse, plot = plot, directed = directed, wholegrowth=wholegrowth,growthfactor=growthfactor, num_measurements = num_measurements, verbose = verbose, plotx = plotx, ploty = ploty, ploty2 = ploty2, drawgraph = drawgraph, draw= draw)
 		return graph, data
 
 def get_nodename(node):
@@ -180,7 +180,7 @@ def load_graph_force_no_errors(csvfile,indexcol=False):
 	pickle.dump(nodes, open("nodes.p", "wb" ) )
 
 #this does all the growth and measurement stuff.
-def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = False, totalrandom = False, usenx= True, force_connected = True, sparse = True, plot = False, directed = True, wholegrowth=False,growthfactor=100, num_measurements = 100, verbose = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modval',drawgraph = 'triangulated', draw= True, drawspectral = True, getgraph = True):
+def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = False, random_modular = False, totalrandom = False, force_connected = True, sparse = True, plot = False, directed = True, wholegrowth=False,growthfactor=100, num_measurements = 100, verbose = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modval',drawgraph = 'triangulated', draw= True, drawspectral = False, getgraph = True):
 	"""
 	This function takes a graph that was loaded using load_graph and grows it,
 	meauring modularity and clique size. Modularity is found via a partition using 
@@ -224,13 +224,14 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 	incomingrandom = Boolean, This will shuffle all the incoming edges, keeping the in-degree the same, and grow that as a "random" graph alongside the real graph.
 	totalrandom = Boolean, This uses a graph picked randomly out of the set of all graphs with the same number of nodes and edges as the real graph, and then
 	grow that as a "random" graph alongside the real graph. This preserves overall degree, and number of nodes/edges
+	random_modular = Boolean, This will make a very modular version of your graph. It takes edges that exist between the communities and adds them within communities, preserving edge and node number. This is interesting for Bayesian Analysis and Fodorian ideas about modularity and inference.
 	
-	usenx: Boolean, This uses python code wherever possible, instaeding of making use of the Matlab Bayes Net Toolbox. Default: True
-
 
 	Returns:
 
-	the grown graph, the random growth graph(only if one is grown), dataframe of measurements
+	the grown graph, the random growth graph(only if one is grown), the partition(i.e., communities) of both random and real graphs, dataframe of measurements, which always contains:
+	nodegrowth, edgegrowth, modval, num_partitions, random_modval, num_random_partitions, maxclique, random_maxclique, avgclique, random_avgclique, run_time
+
 
 	"""
 
@@ -437,12 +438,12 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 				modgraph = nx.Graph(graph) #make it into a undirected networkx graph. This measures moduilarity on undirected version of graph! 
 				partition = best_partition(modgraph) #find the partition with maximal modularity
 				modval = modularity(partition,modgraph) #calculate modularity with that partition
+				num_partitions = max(partition.values)
 
 				#drop edges to make "random" graph more modular. It is after the modularity on the regular graph because we need the partition from the real graph to make this "random" one.
-				random_modular = True
 				if random_modular == True:
 					random = True
-					percent_drop = .9 #what percentage of the between module edges do we drop?
+					percent_drop = .99 #what percentage of the between module edges do we drop?
 					#find out how many edges exist between modules
 					print 'calculating between module edges'
 					edges = graph.edges()
@@ -459,7 +460,7 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 					#get edges from graph
 					edges_dropped = 0 # keep track of number of edges we drop, do dropping untill we get to edge drop
 					if verbose:
-						print 'dropping edges between modules'
+						print 'dropping edges between modules, adding edges within modules'
 					while edges_dropped < edgedrop:
 						edges = random_graph.edges()
 						edge = Random.choice(random_graph.edges())
@@ -478,30 +479,22 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 										random_graph.add_edge(node1,node2)
 										added_within = True
 
+				# make sure the graphs have the same amount of nodes and edges.
+				if not len(graph.edges()) == len(random_graph.edges()):
+					print 'Graphs have unequal number of edges!'
+				if not len(grands.nodes()) == len(random_graph.nodes()):
+					print 'Graphs have unequal number of nodes!'
 
-				sleep(2)
+ 				sleep(2)
 				if random == True:
 					random_modgraph = random_graph.to_undirected() #make it into a undirected networkx graph. This measures moduilarity on undirected version of graph! 
 					random_partition = best_partition(random_modgraph) #find the partition with maximal modularity
 					random_modval = modularity(random_partition,random_modgraph) #calculate modularity with that partition
+					num_random_partitions = max(random_partition.values)
 				#option to use python nx to moralize and triangulate
-				if usenx == True:
-					moralized = moral_graph(graph)
-					if random == True:
-						random_moralized = moral_graph(random_graph)
-				
-				else: #use Octave to run Matlab Bayes Net Toolbox, NOT SET UP FOR RANDOM GRAPHS YET.
-					moralized = nx.to_numpy_matrix(graph) # make nx graph into a simple matrix
-					ismoral = False
-					tries = 0
-					while ismoral == False and tries < 5: #sometimes oct2py takes too long to return I think
-					    try:
-					        moralized, moral_edges = octave.moralize(moralized)
-					        ismoral = True
-					    except:
-					        ismoral = False
-					        print 'Octave Error, trying again!'
-					        tries = tries + 1
+				moralized = moral_graph(graph)
+				if random == True:
+					random_moralized = moral_graph(random_graph)
 				
 				#the triangulation works better if you pass it an order of the nodes based on minimal degree. 
 				#netowk x can make the matrix in any node order, so I made the matrix in order of minimal degree
@@ -560,10 +553,10 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 				#store the data! 
 
 				if random == True:
-					data.append([nodegrowth, edgegrowth, modval, random_modval, maxclique, random_maxclique, avgclique, random_avgclique, run_time]) #store results
+					data.append([nodegrowth, edgegrowth, modval, num_partitions, random_modval, num_random_partitions, maxclique, random_maxclique, avgclique, random_avgclique, run_time]) #store results
 
 				if random == False:
-					data.append([nodegrowth, edgegrowth, modval, maxclique,avgclique,run_time]) #store results
+					data.append([nodegrowth, edgegrowth, modval, num_partitions, maxclique, avgclique, run_time]) #store results
 				
 				sparsemeasurements.remove(nodegrowth) #so we don't calculate clique size more than once!
 				if verbose:
@@ -674,7 +667,7 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 	except KeyboardInterrupt:
 		if random == True:
 			df = pd.DataFrame(data, columns= ('nodegrowth', 'edgegrowth', 'modval','random_modval', 'maxclique', 'random_maxclique', 'avgclique', 'random_avgclique', 'run_time'))
-			return(graph, partition, random_graph, df)
+			return(graph, partition, random_graph, random_partition, df)
 		if random == False:
 			df = pd.DataFrame(data, columns= ('nodegrowth','edgegrowth', 'modval','maxclique','avgclique','run_time'))
 			return (graph, partition, df)

@@ -442,7 +442,7 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 				random_modular = True
 				if random_modular == True:
 					random = True
-					percent_drop = .9 #what percentage of the between module edges do we drop?
+					percent_drop = .99 #what percentage of the between module edges do we drop?
 					#find out how many edges exist between modules
 					print 'calculating between module edges'
 					edges = graph.edges()
@@ -453,11 +453,13 @@ def grow_graph(reverserandom = False, outgoingrandom = False, incomingrandom = F
 						if not partition[node1] == partition[node2]:
 							between_mod_edges = between_mod_edges + 1 
 					edgedrop = (float(between_mod_edges)) * percent_drop #might want to make this for just edges between. would need to calcualte number of edges between modules.
-					print 'dropping ' + str(edgedrop) + ' edges out of ' + str(len(graph.edges()))
+					if verbose:
+						print 'dropping ' + str(edgedrop) + ' edges out of ' + str(len(graph.edges()))
 					random_graph = graph.copy()
 					#get edges from graph
 					edges_dropped = 0 # keep track of number of edges we drop, do dropping untill we get to edge drop
-					print 'dropping edges between modules'
+					if verbose:
+						print 'dropping edges between modules'
 					while edges_dropped < edgedrop:
 						edges = random_graph.edges()
 						edge = Random.choice(random_graph.edges())
