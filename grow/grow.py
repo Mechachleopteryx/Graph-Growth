@@ -65,7 +65,7 @@ def grow(csvfile, supermodular= False, preferential = True, reverserandom=False,
 	incomingrandom = Boolean, This will shuffle all the incoming edges, keeping the in-degree the same, and grow that as a "random" graph alongside the real graph.
 	totalrandom = Boolean, This uses a graph picked randomly out of the set of all graphs with the same number of nodes and edges as the real graph, and then
 	grow that as a "random" graph alongside the real graph. This preserves overall degree, and number of nodes/edges
-	super_modular = Boolean, This will create the most modular version of your graph that is still fully connected. It takes edges that exist between the communities and adds them within communities, preserving edge and node number. This is interesting for Bayesian Analysis and Fodorian ideas about modularity and inference.
+	supermodular = Boolean, This will create the most modular version of your graph that is still fully connected. It takes edges that exist between the communities and adds them within communities, preserving edge and node number. This is interesting for Bayesian Analysis and Fodorian ideas about modularity and inference.
 	random_modular = Boolean, This will make a very modular version of your graph. It takes edges that exist between the communities and adds them within communities, preserving edge and node number. This is interesting for Bayesian Analysis and Fodorian ideas about modularity and inference.
 	
 
@@ -325,14 +325,14 @@ def grow_graph(supermodular = False, preferential = True, reverserandom = False,
 
 		# here we figure out at what points to measure if the user wants a spare measumement or to measure every time a node is added. This speeds up big graph growths a lot! 
 		if sparse == True:
-		    sparsemeasurements = [2,3,4,5,6,7,8,9,growthfactor]
+		    sparsemeasurements = [growthfactor]
 		    measurements = np.logspace(1, (int(len(str(growthfactor)))), num=num_measurements)
 		    for x in measurements:
 		        sparsemeasurements.append(int(x))
 			for x in sparsemeasurements:
 				if x > (growthfactor+1):
 					sparsemeasurements.remove(x) #logspace is hard to build on the fly, so sometimes it has values over the growthfactor, so we remove them.
-				if x < 2:
+				if x < 5:
 					sparsemeasurements.remove(x) #sometimes no cliques exist in a graph this small.
 
 		else:
@@ -491,31 +491,40 @@ def grow_graph(supermodular = False, preferential = True, reverserandom = False,
 				# Keep the number of outgoing links for each node the same, but randomly allocating their destinations. This should break modularity, put preserves out-degree.
 				if outgoingrandom == True:
 					random_graph = graph.copy()
-					for edge in random_graph.edges():
+					for edge in graph.edges():
 						parent = edge[0]
 						child = edge[1]
 						random_graph.remove_edge(parent,child)
-						newchild = parent
-						while newchild == parent: #so that we don't get a self loop.
-							newchild = np.random.choice(graph.nodes())
-						random_graph.add_edge(parent,newchild)
-						random = True
+						added = False
+						while added == False: #so that we make sure to add a new edge, since it won't error if the edge already exists 
+							newchild = parent
+							while newchild == parent: #so that we don't get a self loop.
+								newchild = np.random.choice(graph.nodes())
+							if (parent,newchild) not in random_graph.edges():
+								random_graph.add_edge(parent,newchild)
+								added = True 
+					random = True
 				# Same thing, but this time fixing the number of incoming links and randomly allocating their origins. Likewise, but preserves in-degree.
 				if incomingrandom ==True:
 					random_graph = graph.copy()
-					for edge in random_graph.edges():
+					for edge in graph.edges():
 						parent = edge[0]
 						child = edge[1]
 						random_graph.remove_edge(parent,child)
-						newparent = child
-						while newparent == child:
-							newparent = np.random.choice(graph.nodes())
-						random_graph.add_edge(newparent,child)
-						random = True
+						added = False
+						while added == False:
+							newparent = child
+							while newparent == child:
+								newparent = np.random.choice(graph.nodes())
+							if (newparent,child) not in random_graph.edges():
+ 								random_graph.add_edge(newparent,child)
+ 								added = True
+					random = True
 				#gives a graph picked randomly out of the set of all graphs with n nodes and m edges. This preserves overall degree, and number of nodes/edges, but is completeley random to outdegree/indegree. 
 				if totalrandom == True:
 					numrandomedges = graph.number_of_edges()
 					numrandomnodes = graph.number_of_nodes()
+					numrandomedges = numrandomedges/2
 					random_graph = nx.dense_gnm_random_graph(numrandomnodes, numrandomedges)
 					random_graph = random_graph.to_directed()
 					random = True
@@ -796,7 +805,7 @@ def grow_graph(supermodular = False, preferential = True, reverserandom = False,
 					plt.show()
 		if random == True:
 			df = pd.DataFrame(data, columns = ('nodegrowth', 'edgegrowth', 'modval','num_partitions','random_modval','num_random_partitions', 'maxclique', 'random_maxclique', 'avgclique', 'random_avgclique', 'run_time'))
-			return(graph, partition, random_graph, df)
+			return(graph, partition, random_graph, random_partition, df)
 		if random == False:
 			df = pd.DataFrame(data, columns = ('nodegrowth','edgegrowth', 'modval','num_partitions', 'maxclique','avgclique','run_time'))
 			return (graph, partition, df)
