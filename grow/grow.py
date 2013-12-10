@@ -23,14 +23,59 @@ import operator
 def grow(csvfile, supermodular= False, preferential = True, reverserandom=False, outgoingrandom = True, random_modular = False, incomingrandom = False, totalrandom = False,getgraph = True, drawspectral = True, force_connected = True, sparse = True, plot = False, directed = True, wholegrowth=False,growthfactor=100, num_measurements = 10, verbose = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modval',drawgraph = 'triangulated', draw= True):
 	"""
 	This function will load your graph and grow it. 
-	It takes in the same parameters as load_graph and grow_graph, and does it all at once.
+	It takes in the same parameters as load_graph and grow_graph, and does it all at once
+
+	Parameters:
+
+	csvfile: str of the cvs file your graph is represented in, with each line an edge, with the 0 column being the parent.
+
+	growthfactor: int, How many nodes do you want to grow your graph to? Default: 100
+
+	wholegrowth: Boolean, This will grow the entire graph. Default: False
+
+	verbose: Boolean, Do you want to see what's going on while it grows? Default: True
+	
+	sparse: Boolean, Do you want to measure sparely? This can really speed things
+	up for a larger graph. It measures on a log scale, e.g., 1, 3, 9, 27...
+	Default: True
+
+	num_measurements: int, How many times do you want to measure the graph? Default: 10
+
+	preferential, Boolean, if True, the source nodes are more likely to have higher degree during growth.
+	
+	force_connected: Boolean, Do you want the graph to remain connected as it grows? Default: True
+
+	directed: Boolean, Is your graph directed? Right now, this only supports directed graphs. Default: True
+
+	draw: Boolean, Do you want to see the graph as it grows? Default: False
+	You cannot plot and draw at the same time. It will default to plot if you have both True.
+
+	drawgraph: str, What graph do you want to draw? Options: 'triangulated', 'moralized', 'directed'
+
+	drawspectral: Boolean, This will draw a spectral layout of the graph instead of a random one. Default: False
+
+	plot: Boolean, Do you want to plot the growth measurements as the graph grows? Default: False
+
+	plotx: str, What x axis do you want to plot? Options: 'nodegrowth', 'edgegrowth', 'maxclique', 'modval', 'run_time', 'avgclique', Default: 'nodegrowth'
+	ploty: str, What y axis do you want to plot? Options: 'nodegrowth', 'edgegrowth', 'maxclique', 'modval', 'run_time', 'avgclique', Default: 'maxclique'
+	ploty2: str, What 2nd y axis do you want to plot? Options: 'nodegrowth', 'edgegrowth', 'maxclique', 'modularity', 'run_time', 'avgclique', Default: 'modval'
+
+	reverserandom: Boolean, This will reverse the direction of edges and grow that as a "random" graph alongside the real graph.
+	outgoingrandom: Boolean, This will shuffle all the outgoing edges, keeping the out-degree the same, and grow that as a "random" graph alongside the real graph.
+	incomingrandom = Boolean, This will shuffle all the incoming edges, keeping the in-degree the same, and grow that as a "random" graph alongside the real graph.
+	totalrandom = Boolean, This uses a graph picked randomly out of the set of all graphs with the same number of nodes and edges as the real graph, and then
+	grow that as a "random" graph alongside the real graph. This preserves overall degree, and number of nodes/edges
+	super_modular = Boolean, This will create the most modular version of your graph that is still fully connected. It takes edges that exist between the communities and adds them within communities, preserving edge and node number. This is interesting for Bayesian Analysis and Fodorian ideas about modularity and inference.
+	random_modular = Boolean, This will make a very modular version of your graph. It takes edges that exist between the communities and adds them within communities, preserving edge and node number. This is interesting for Bayesian Analysis and Fodorian ideas about modularity and inference.
+	
 
 	Returns:
 
-	If you pass it the option to grow a random graph, it returns the graph, the random graph, and the data
-	If you pass it no random options, it returns the graph and the data.
+	the grown graph, the random growth graph(only if one is grown), the partition(i.e., communities) of both random and real graphs, dataframe of measurements, which always contains:
+	nodegrowth, edgegrowth, modval, num_partitions, random_modval, num_random_partitions, maxclique, random_maxclique, avgclique, random_avgclique, run_time
 	
 	"""
+	
 	load_graph(csvfile = csvfile)
 	if reverserandom or outgoingrandom or incomingrandom or random_modular or totalrandom == True:
 		graph, randomgraph, data = grow_graph(preferential = preferential, supermodular = supermodular, reverserandom=reverserandom, outgoingrandom = outgoingrandom, incomingrandom = incomingrandom, totalrandom = totalrandom, random_modular = random_modular, getgraph = getgraph, drawspectral = drawspectral, force_connected = force_connected, sparse = sparse, plot = plot, directed = directed, wholegrowth=wholegrowth,growthfactor=growthfactor, num_measurements = num_measurements, verbose = verbose, plotx = plotx, ploty = ploty, ploty2 = ploty2, drawgraph = drawgraph, draw= draw)
@@ -336,7 +381,7 @@ def grow_graph(supermodular = False, preferential = True, reverserandom = False,
 				    fromnode = initial_node
 				    graph.add_node(fromnode)
 				    if verbose:
-				        print 'using initial node'
+				        print 'using initial node: ' + str(initial_node)
 				        initial_used = initial_used+1
 				        if initial_used > 50:
 				        	1/0
@@ -350,7 +395,7 @@ def grow_graph(supermodular = False, preferential = True, reverserandom = False,
 				    fromnode = initial_node
 				    graph.add_node(fromnode)
 				    if verbose:
-				        print 'using initial node'
+				        print 'using initial node: ' + str(initial_node)
 				        initial_used = initial_used+1
 				        if initial_used > 50:
 				        	1/0
@@ -673,7 +718,7 @@ def grow_graph(supermodular = False, preferential = True, reverserandom = False,
 						df = pd.DataFrame(data, columns= ('nodegrowth','edgegrowth', 'modval','num_partitions', 'maxclique','avgclique','run_time'))
 						plt.close()
 						plt.ion()
-						fig = plt.figure(figsize=(24,16))
+						fig = plt.figure(figsize=(18,10))
 						ax = fig.add_subplot(1,1,1)
 						ax2 = ax.twinx()
 						y1 = df[ploty] #user input, default to clique size
@@ -685,7 +730,7 @@ def grow_graph(supermodular = False, preferential = True, reverserandom = False,
 						ax.set_ylabel(ploty,fontsize=20)
 						ax2.set_ylabel(ploty2, fontsize=20)
 						plt.suptitle('Graph Growth', fontsize=30)
-						plt.legend((line1,line2),(ploty , ploty2), loc='upper center', frameon=False, fontsize=20)
+						plt.legend((line1,line2),(ploty , ploty2), loc='lower right', frameon=False, fontsize=20)
 						plt.show()
 						plt.draw()
 
@@ -713,7 +758,7 @@ def grow_graph(supermodular = False, preferential = True, reverserandom = False,
 						ax.set_ylabel(ploty,fontsize=20)
 						ax2.set_ylabel(ploty2, fontsize=20)
 						plt.suptitle('Graph Growth', fontsize=30)
-						plt.legend((line1,line2,line3,line4), (ploty,ploty2,y3def,y4def),loc='upper center', frameon=False, fontsize=20)#
+						plt.legend((line1,line2,line3,line4), (ploty,ploty2,y3def,y4def),loc='lower right', frameon=False, fontsize=20)#
 						plt.show()
 						plt.draw()
 				#draw the graph every time a computation is done.
@@ -770,14 +815,9 @@ def grow_graph(supermodular = False, preferential = True, reverserandom = False,
 			df = pd.DataFrame(data, columns = ('nodegrowth','edgegrowth', 'modval','num_partitions', 'maxclique','avgclique','run_time'))
 			return (graph, partition, df)
 
-def build(return_partition=True, return_modval = True, return_graph= True, verbose = True):
+def build(verbose = True):
 	"""
 	This build the entire graph from the database and returns the partition and modularity value.
-
-	Parameters
-	return_partition = True
-	return_modval = True
-	return_partition = True
 
 	"""
 	graph_db = database()
@@ -837,7 +877,8 @@ def build(return_partition=True, return_modval = True, return_graph= True, verbo
 	partition = best_partition(modgraph) #find the partition with maximal modularity
 	modval = modularity(partition,modgraph) #calculate modularity with that partition
 	return graph, partition, modval
-#________________________________________________________________________________________________________________________________________________________
+#this is where my part of the code ends
+#______________________________________________________________________________________________________________________________________________________
 # this is the community finding stuff and networkx bayes stuff. I did not write ANY this...
 
 
