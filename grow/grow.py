@@ -155,7 +155,7 @@ def load_graph(csvfile,indexcol=False):
 	print 'Started new graph database'
 
 	#make sure graph DB initialized 
-	print 'Graph Database  Version: ' + str(graph_db.neo4j_version)
+	print 'Graph Database Version: ' + str(graph_db.neo4j_version)
 	csvfile = open(csvfile)
 	reader = csv.reader(csvfile,delimiter=',')
 	nodes = {} # keep track of nodes already in graph_db.
@@ -164,22 +164,16 @@ def load_graph(csvfile,indexcol=False):
 	        nodes[name], = graph_db.create(node(name=name)) #make the node if it doesn't exist 
 	    return nodes[name] #return the node
 	print 'Loading graph into database...'
-	errors = 0
-	while errors <100:
-		try:
-			for row in reader:
-				if indexcol == True:
-				    parent = get_or_create_node(graph_db, row[1])
-				    child = get_or_create_node(graph_db, row[2])
-				    parent_child, = graph_db.create(rel(parent, "--", child))
-				else:
-				    parent = get_or_create_node(graph_db, row[0])
-				    child = get_or_create_node(graph_db, row[1])
-				    parent_child, = graph_db.create(rel(parent, "--", child)) 
-			errors = 100
-		except:
-			errors = errors + 1 
-	print 'Loaded graph into database with: ' + str(errors) + 'errors.' 
+	for row in reader:
+		if indexcol == True:
+		    parent = get_or_create_node(graph_db, row[1])
+		    child = get_or_create_node(graph_db, row[2])
+		    parent_child, = graph_db.create(rel(parent, "--", child))
+		else:
+		    parent = get_or_create_node(graph_db, row[0])
+		    child = get_or_create_node(graph_db, row[1])
+		    parent_child, = graph_db.create(rel(parent, "--", child)) 
+	print 'Loaded graph into database' 
 	pickle.dump(nodes, open("nodes.p", "wb" ) )
 
 def load_graph_force_no_errors(csvfile,indexcol=False):	
