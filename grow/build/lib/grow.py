@@ -278,7 +278,7 @@ def grow_graph(supermodular = False, preferential = True, reverserandom = False,
 	incomingrandom = Boolean, This will shuffle all the incoming edges, keeping the in-degree the same, and grow that as a "random" graph alongside the real graph.
 	totalrandom = Boolean, This uses a graph picked randomly out of the set of all graphs with the same number of nodes and edges as the real graph, and then
 	grow that as a "random" graph alongside the real graph. This preserves overall degree, and number of nodes/edges
-	super_modular = Boolean, This will create the most modular version of your graph that is still fully connected. It takes edges that exist between the communities and adds them within communities, preserving edge and node number. This is interesting for Bayesian Analysis and Fodorian ideas about modularity and inference.
+	supermodular = Boolean, This will create the most modular version of your graph that is still fully connected. It takes edges that exist between the communities and adds them within communities, preserving edge and node number. This is interesting for Bayesian Analysis and Fodorian ideas about modularity and inference.
 	random_modular = Boolean, This will make a very modular version of your graph. It takes edges that exist between the communities and adds them within communities, preserving edge and node number. This is interesting for Bayesian Analysis and Fodorian ideas about modularity and inference.
 	
 
@@ -562,7 +562,7 @@ def grow_graph(supermodular = False, preferential = True, reverserandom = False,
 				#drop edges to make "random" graph more modular. It is after the modularity on the regular graph because we need the partition from the real graph to make this "random" one.
 				if random_modular == True:
 					random = True
-					percent_drop = .9 #what percentage of the between module edges do we drop?
+					percent_drop = .99 #what percentage of the between module edges do we drop?
 					#find out how many edges exist between modules
 					edges = graph.edges()
 					between_mod_edges = 0
@@ -573,32 +573,33 @@ def grow_graph(supermodular = False, preferential = True, reverserandom = False,
 							between_mod_edges = between_mod_edges + 1 
 					edgedrop = (float(between_mod_edges)) * percent_drop #this is for a percentage.
 					random_graph = graph.copy()
+					
 					#get edges from graph
 					edges_dropped = 0 # keep track of number of edges we drop, do dropping untill we get to edge drop
 					if verbose:
 						print 'dropping edges between modules, adding edges within modules'
 					
-					for x in todrop:
+					drop = []
+					for x in todrop: #remove duplicates
 						if x not in drop:
 							drop.append(x)
-						for edge in drop: #loop through previously dropped edges, making sure they are still across modules, since the modules can change as the graph grows
-							node1 = edge[0]
-							node2 = edge[1]
-							if not partition[node1] == partition[node2]: #make sure we pick an edge that is between modules
-								random_graph.remove_edge(node1,node2)
-								edges_dropped = edges_dropped + 1
-								# add an edge back into the graph, but make sure it is within modules
-								added_within = False
-								while added_within == False:
-									node1 = Random.choice(random_graph.nodes())
-									node2 = Random.choice(random_graph.nodes())
-									if partition[node1] == partition[node2]: #make sure they are in the same module
-										if not (node1,node2) in random_graph.edges(): #make sure the edge doens't already exist
-											random_graph.add_edge(node1,node2)
-											added_within = True
+					for edge in drop: #loop through previously dropped edges, making sure they are still across modules, since the modules can change as the graph grows
+						node1 = edge[0]
+						node2 = edge[1]
+						if not partition[node1] == partition[node2]: #make sure we pick an edge that is between modules
+							random_graph.remove_edge(node1,node2)
+							edges_dropped = edges_dropped + 1
+							# add an edge back into the graph, but make sure it is within modules
+							added_within = False
+							while added_within == False:
+								node1 = Random.choice(random_graph.nodes())
+								node2 = Random.choice(random_graph.nodes())
+								if partition[node1] == partition[node2]: #make sure they are in the same module
+									if not (node1,node2) in random_graph.edges(): #make sure the edge doens't already exist
+										random_graph.add_edge(node1,node2)
+										added_within = True
 
 					while edges_dropped < edgedrop:
-						edges = random_graph.edges()
 						edge = Random.choice(random_graph.edges())
 						node1 = edge[0]
 						node2 = edge[1]
