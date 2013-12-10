@@ -1,4 +1,6 @@
-This package allows for graph theory analyses of how a network grows.
+This package allows for graph theory analyses of how any network grows, but with a focus on Bayesian Networks.
+
+It is open source; if you want a feature, let me know! I can probably add it, or perhaps you can! 
 
 This module can analyze any network (in csv form), regardless of size, because it uses a graph theory database to store the network.
 
