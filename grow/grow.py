@@ -226,7 +226,7 @@ def load_graph_force_no_errors(csvfile,indexcol=False):
 	pickle.dump(nodes, open("nodes.p", "wb" ) )
 
 #this does all the growth and measurement stuff.
-def grow_graph(supermodular = False, preferential = True, reverserandom = False, outgoingrandom = False, incomingrandom = False, random_modular = False, totalrandom = False, force_connected = True, sparse = True, plot = False, directed = True, wholegrowth=False,growthfactor=100, num_measurements = 100, verbose = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modval',drawgraph = 'triangulated', draw= True, drawspectral = False, getgraph = True):
+def grow_graph(supermodular = False, preferential = True, reverserandom = False, outgoingrandom = False, incomingrandom = False, random_modular = False, totalrandom = False, force_connected = True, sparse = True, plot = False, directed = True, wholegrowth=False,growthfactor=100, num_measurements = 100, verbose = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modval',drawgraph = 'triangulated', draw= True, drawspectral = True, getgraph = True):
 	"""
 	This function takes a graph that was loaded using load_graph and grows it,
 	meauring modularity and clique size. Modularity is found via a partition using 
