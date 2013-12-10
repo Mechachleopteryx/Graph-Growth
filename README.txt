@@ -1,51 +1,36 @@
-This module will load very large graphs into a database and then grow that graph and measure important properties as it grows, with the option to grow a number of different random graph alongside it for comparison.
+This package allows for graph theory analyses of how a network grows.
 
-You have the option to draw the graphs as they grow, or plot the graph measurements as the graphs grow.
+This module can analyze any network (in csv form), regardless of size, because it uses a graph theory database to store the network.
 
-It is written in Python. It uses py2neo and neo4j to store the graph as a database, allowing for very large graphs. All functions were written by Maxwell Bertolero(2013), except for the Bayes Network Toolbox stuff, which is run via Octave and oct2py. 
+It can then grow the network, starting with one node, ending with the entire networt or the number of nodes the user sets.
 
-All of the functions and dependencies can be set up with one line, in the grow directory:
-$ python setup.py install  
+It can measure various graph theory properties as the network grows, including modularity, number of communities, and clique sizes.
 
-Please see the tutorials folder for the IPython notebook tutorial.  
+It has the option of growing various random but controlled graphs for comparison.
 
-Here are the different options you can pass the load_graph and grow_graph functions.
+It also allows one the option of plotting the graph theory properties or drawing the network as the network grows.
 
-csvfile: Simply pass in your CSV file. It assumes the 0 column is the parent node, and 1 is the child node. Each line is an edge.
+It also allows one to call any Bayes Net Toolbox (MATLAB) function without having to use MATLAB, and you get Python objects back.
 
-growthfactor: int, How many nodes do you want to grow your graph to? Default: 100
+This module is dependent on Octave, Oct2py, Neo4j, and py2neo. But don't worry! One line will install everything.
 
-wholegrowth: Boolean, This will grow the entire graph. Default: False
+$ python setup.py install
 
-verbose: Boolean, Do you want to see what's going on while it grows? Default: True
+If you want to load in a graph and grow it...
 
-sparse: Boolean, Do you want to measure sparely? This can really speed things
-up for a larger graph. It measures on a log scale, e.g., 1, 3, 9, 27...
-Default: True
+$ import grow
+$ graph, randomgraph, data = grow.grow(csvfile = 'graph.csv')
 
-num_measurements: int, How many times do you want to measure the graph? Default: 10
+This returns:
 
-force_connected: Boolean, Do you want the graph to remain connected as it grows? Default: True
-
-directed: Boolean, Is your graph directed? Right now, this only supports directed graphs. Default: True
-
-draw: Boolean, Do you want to see the graph as it grows? Default: False
-You cannot plot and draw at the same time. It will default to plot if you have both True.
-
-drawgraph: str, What graph do you want to draw? Options: 'triangulated', 'moralized', 'directed'
-
-drawspectral: Boolean, This will draw a spectral layout of the graph instead of a random one. Default: False
-
-plot: Boolean, Do you want to plot the growth measurements as the graph grows? Default: False
-
-plotx: str, What x axis do you want to plot? Options: 'nodegrowth', 'edgegrowth', 'maxclique', 'modval', 'run_time', 'avgclique', Default: 'nodegrowth'
-ploty: str, What y axis do you want to plot? Options: 'nodegrowth', 'edgegrowth', 'maxclique', 'modval', 'run_time', 'avgclique', Default: 'maxclique'
-ploty2: str, What 2nd y axis do you want to plot? Options: 'nodegrowth', 'edgegrowth', 'maxclique', 'modularity', 'run_time', 'avgclique', Default: 'modval'
-
-reverserandom: Boolean, This will reverse the direction of edges and grow that as a "random" graph alongside the real graph.
-outgoingrandom: Boolean, This will shuffle all the outgoing edges, keeping the out-degree the same, and grow that as a "random" graph alongside the real graph.
-incomingrandom = Boolean, This will shuffle all the incoming edges, keeping the in-degree the same, and grow that as a "random" graph alongside the real graph.
-totalrandom = Boolean, This uses a graph picked randomly out of the set of all graphs with the same number of nodes and edges as the real graph, and then
-grow that as a "random" graph alongside the real graph. This preserves overall degree, and number of nodes/edges
-
-usenx: Boolean, This uses python code wherever possible, instaeding of making use of the Matlab Bayes Net Toolbox. Default: True
+The network as a NetworkX graph.
+The random graph, if one is grown.
+The partition (i.e., communities) of both random and real graphs, as a dictionary of nodes and community number
+Pandas Dataframe of:
+node growth
+edge growth
+modularity values (real and random)
+number of partitions (real and random)
+clique size (real and random)
+average clique size (real and random)
+run times for each measurement of the graphs
