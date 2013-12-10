@@ -772,6 +772,8 @@ def grow_graph(supermodular = False, preferential = True, reverserandom = False,
 						G = nx.from_numpy_matrix(moralized)
 					elif drawgraph == 'directed':
 						G = graph
+					elif drawgraph == 'random':
+						G = random_graph
 					plt.close()
 					plt.ion()
 					

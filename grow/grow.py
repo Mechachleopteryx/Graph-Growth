@@ -263,7 +263,7 @@ def grow_graph(supermodular = False, preferential = True, reverserandom = False,
 	draw: Boolean, Do you want to see the graph as it grows? Default: False
 	You cannot plot and draw at the same time. It will default to plot if you have both True.
 
-	drawgraph: str, What graph do you want to draw? Options: 'triangulated', 'moralized', 'directed'
+	drawgraph: str, What graph do you want to draw? Options: 'triangulated', 'moralized', 'directed', 'random'
 
 	drawspectral: Boolean, This will draw a spectral layout of the graph instead of a random one. Default: False
 
@@ -772,6 +772,8 @@ def grow_graph(supermodular = False, preferential = True, reverserandom = False,
 						G = nx.from_numpy_matrix(moralized)
 					elif drawgraph == 'directed':
 						G = graph
+					elif drawgraph == 'random':
+						G = random_graph
 					plt.close()
 					plt.ion()
 					
