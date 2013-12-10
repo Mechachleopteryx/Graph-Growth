@@ -271,7 +271,7 @@ def grow_graph(supermodular = False, preferential = True, reverserandom = False,
 
 	plotx: str, What x axis do you want to plot? Options: 'nodegrowth', 'edgegrowth', 'maxclique', 'modval', 'run_time', 'avgclique', Default: 'nodegrowth'
 	ploty: str, What y axis do you want to plot? Options: 'nodegrowth', 'edgegrowth', 'maxclique', 'modval', 'run_time', 'avgclique', Default: 'maxclique'
-	ploty2: str, What 2nd y axis do you want to plot? Options: 'nodegrowth', 'edgegrowth', 'maxclique', 'modularity', 'run_time', 'avgclique', Default: 'modval'
+	ploty2: str, What 2nd y axis do you want to plot? Options: 'nodegrowth', 'edgegrowth', 'maxclique', 'modval', 'run_time', 'avgclique', Default: 'modval'
 
 	reverserandom: Boolean, This will reverse the direction of edges and grow that as a "random" graph alongside the real graph.
 	outgoingrandom: Boolean, This will shuffle all the outgoing edges, keeping the out-degree the same, and grow that as a "random" graph alongside the real graph.
@@ -745,8 +745,9 @@ def grow_graph(supermodular = False, preferential = True, reverserandom = False,
 						fig = plt.figure(figsize=(18,10))
 						ax = fig.add_subplot(1,1,1)
 						ax2 = ax.twinx()
-						ticks = [0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1]
-						ax2.set_yticks(ticks)
+						if ploty2 == 'modval':
+							ticks = [0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1]
+							ax2.set_yticks(ticks)
 						y1 = df[ploty]
 						y2 = df[ploty2]
 						y3def = str('random_'+ploty) # i just add random to whatever the user inputs as the y stuff they want to plot
