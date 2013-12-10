@@ -1,58 +1,131 @@
 <!DOCTYPE html>
 <html>
-
   <head>
-    <meta charset='utf-8' />
-    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
-    <meta name="description" content="Graph Growth : Growing Graphs since 2013" />
-
-    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
-
-    <title>Graph Growth</title>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Graph Growth by mb3152</title>
   </head>
 
   <body>
+    <div id="container">
+      <div class="inner">
 
-    <!-- HEADER -->
-    <div id="header_wrap" class="outer">
-        <header class="inner">
-          <a id="forkme_banner" href="https://github.com/mb3152/Graph-Growth">View on GitHub</a>
-
-          <h1 id="project_title">Graph Growth</h1>
-          <h2 id="project_tagline">Growing Graphs since 2013</h2>
-
-            <section id="downloads">
-              <a class="zip_download_link" href="https://github.com/mb3152/Graph-Growth/zipball/master">Download this project as a .zip file</a>
-              <a class="tar_download_link" href="https://github.com/mb3152/Graph-Growth/tarball/master">Download this project as a tar.gz file</a>
-            </section>
+        <header>
+          <h1>Graph Growth</h1>
+          <h2>Growing Graphs since 2013</h2>
         </header>
+
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/mb3152/Graph-Growth/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/mb3152/Graph-Growth/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/mb3152/Graph-Growth" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+          <p>This package allows for graph theory analyses of how any network grows, but with a focus on Bayesian Networks.</p>
+
+<p>It is open source; if you want a feature, let me know! I can probably add it, or perhaps you can! </p>
+
+<p>This module can analyze any network (in csv form), regardless of size, because it uses a graph theory database to store the network.</p>
+
+<p>It can then grow the network, starting with one node, ending with the entire networt or the number of nodes the user sets.</p>
+
+<p>It can measure various graph theory properties as the network grows, including modularity, number of communities, and clique sizes.</p>
+
+<p>It has the option of growing various random but controlled graphs for comparison.</p>
+
+<p>It has the options of true random growth, preferential attachement, and unconnected growth.</p>
+
+<p>It also allows one the option of plotting the graph theory properties or drawing the network as the network grows.</p>
+
+<p>It also allows one to call any Bayes Net Toolbox (MATLAB) function without having to use MATLAB, and you get Python objects back.</p>
+
+<p>This module is dependent on Octave, Oct2py, Neo4j, and py2neo. But don't worry! One line will install everything.</p>
+
+<p>$ python setup.py install</p>
+
+<p>If you want to load in a graph and grow it...</p>
+
+<p>$ import grow
+$ graph, randomgraph, data = grow.grow(csvfile = 'graph.csv')</p>
+
+<p>This returns:</p>
+
+<p>The network as a NetworkX graph.
+The random graph, if one is grown.
+The partition (i.e., communities) of both random and real graphs, as a dictionary of nodes and community number
+Pandas Dataframe of:
+node growth
+edge growth
+modularity values (real and random)
+number of partitions (real and random)
+clique size (real and random)
+average clique size (real and random)
+run times for each measurement of the graphs</p>
+
+<p>Parameters:</p>
+
+<p>csvfile: str of the cvs file your graph is represented in, with each line an edge, with the 0 column being the parent.</p>
+
+<p>growthfactor: int, How many nodes do you want to grow your graph to? Default: 100</p>
+
+<p>wholegrowth: Boolean, This will grow the entire graph. Default: False</p>
+
+<p>verbose: Boolean, Do you want to see what's going on while it grows? Default: True</p>
+
+<p>sparse: Boolean, Do you want to measure sparely? This can really speed things up for a larger graph. It measures on a log scale, e.g., 1, 3, 9, 27...Default: True</p>
+
+<p>num_measurements: int, How many times do you want to measure the graph? Default: 10</p>
+
+<p>preferential, Boolean, if True, the source nodes are more likely to have higher degree during growth.</p>
+
+<p>force_connected: Boolean, Do you want the graph to remain connected as it grows? Default: True</p>
+
+<p>directed: Boolean, Is your graph directed? Right now, this only supports directed graphs. Default: True</p>
+
+<p>draw: Boolean, Do you want to see the graph as it grows? Default: False, note: You cannot plot and draw at the same time. It will default to plot if you have both True.</p>
+
+<p>drawgraph: str, What graph do you want to draw? Options: 'triangulated', 'moralized', 'directed'</p>
+
+<p>drawspectral: Boolean, This will draw a spectral layout of the graph instead of a random one. Default: False</p>
+
+<p>plot: Boolean, Do you want to plot the growth measurements as the graph grows? Default: False</p>
+
+<p>plotx: str, What x axis do you want to plot? Options: 'nodegrowth', 'edgegrowth', 'maxclique', 'modval', 'run_time', 'avgclique', Default: 'nodegrowth'</p>
+
+<p>ploty: str, What y axis do you want to plot? Options: 'nodegrowth', 'edgegrowth', 'maxclique', 'modval', 'run_time', 'avgclique', Default: 'maxclique'</p>
+
+<p>ploty2: str, What 2nd y axis do you want to plot? Options: 'nodegrowth', 'edgegrowth', 'maxclique', 'modularity', 'run_time', 'avgclique', Default: 'modval'</p>
+
+<p>reverserandom: Boolean, This will reverse the direction of edges and grow that as a "random" graph alongside the real graph.</p>
+
+<p>outgoingrandom: Boolean, This will shuffle all the outgoing edges, keeping the out-degree the same, and grow that as a "random" graph alongside the real graph.</p>
+
+<p>incomingrandom = Boolean, This will shuffle all the incoming edges, keeping the in-degree the same, and grow that as a "random" graph alongside the real graph.</p>
+
+<p>totalrandom = Boolean, This uses a graph picked randomly out of the set of all graphs with the same number of nodes and edges as the real graph, and then grow that as a "random" graph alongside the real graph. This preserves overall degree, and number of nodes/edges.</p>
+
+<p>super_modular = Boolean, This will create the most modular version of your graph that is still fully connected. It takes edges that exist between the communities and adds them within communities, preserving edge and node number. This is interesting for Bayesian Analysis and Fodorian ideas about modularity and inference.</p>
+
+<p>random_modular = Boolean, This will make a very modular version of your graph. It takes edges that exist between the communities and adds them within communities, preserving edge and node number. This is interesting for Bayesian Analysis and Fodorian ideas about modularity and inference.</p>
+        </section>
+
+        <footer>
+          Graph Growth is maintained by <a href="https://github.com/mb3152">mb3152</a><br>
+          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+        
+      </div>
     </div>
-
-    <!-- MAIN CONTENT -->
-    <div id="main_content_wrap" class="outer">
-      <section id="main_content" class="inner">
-        <p>This module will load very large graphs into a database and then grow that graph and measure important properties as it grows, with the option to grow a number of different random graph alongside it for comparison.</p>
-
-<p>You have the option to draw the graphs as they grow, or plot the graph measurements as the graphs grow.</p>
-
-<p>It is written in Python. It uses py2neo and neo4j to store the graph as a database, allowing for very large graphs. All functions were written by Maxwell Bertolero(2013), except for the Bayes Network Toolbox stuff, which is run via Octave and oct2py. </p>
-
-<p>All of the functions and dependencies can be set up with one line, in the grow directory:
-$ python setup.py install  </p>
-
-<p>Please see the tutorials folder for the IPython notebook tutorial.  </p>
-      </section>
-    </div>
-
-    <!-- FOOTER  -->
-    <div id="footer_wrap" class="outer">
-      <footer class="inner">
-        <p class="copyright">Graph Growth maintained by <a href="https://github.com/mb3152">mb3152</a></p>
-        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
-      </footer>
-    </div>
-
-    
-
   </body>
 </html>
