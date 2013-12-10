@@ -20,7 +20,7 @@ import operator
  
 
 #this does the whole shebang!
-def grow(csvfile, supermodular= False, reverserandom=False, outgoingrandom = True, random_modular = False, incomingrandom = False, totalrandom = False,getgraph = True, drawspectral = True, force_connected = True, sparse = True, plot = False, directed = True, wholegrowth=False,growthfactor=100, num_measurements = 10, verbose = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modval',drawgraph = 'triangulated', draw= True):
+def grow(csvfile, supermodular= False, preferential = True, reverserandom=False, outgoingrandom = True, random_modular = False, incomingrandom = False, totalrandom = False,getgraph = True, drawspectral = True, force_connected = True, sparse = True, plot = False, directed = True, wholegrowth=False,growthfactor=100, num_measurements = 10, verbose = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modval',drawgraph = 'triangulated', draw= True):
 	"""
 	This function will load your graph and grow it. 
 	It takes in the same parameters as load_graph and grow_graph, and does it all at once.
@@ -33,10 +33,10 @@ def grow(csvfile, supermodular= False, reverserandom=False, outgoingrandom = Tru
 	"""
 	load_graph(csvfile = csvfile)
 	if reverserandom or outgoingrandom or incomingrandom or random_modular or totalrandom == True:
-		graph, randomgraph, data = grow_graph(supermodular = supermodular, reverserandom=reverserandom, outgoingrandom = outgoingrandom, incomingrandom = incomingrandom, totalrandom = totalrandom, random_modular = random_modular, getgraph = getgraph, drawspectral = drawspectral, force_connected = force_connected, sparse = sparse, plot = plot, directed = directed, wholegrowth=wholegrowth,growthfactor=growthfactor, num_measurements = num_measurements, verbose = verbose, plotx = plotx, ploty = ploty, ploty2 = ploty2, drawgraph = drawgraph, draw= draw)
+		graph, randomgraph, data = grow_graph(preferential = preferential, supermodular = supermodular, reverserandom=reverserandom, outgoingrandom = outgoingrandom, incomingrandom = incomingrandom, totalrandom = totalrandom, random_modular = random_modular, getgraph = getgraph, drawspectral = drawspectral, force_connected = force_connected, sparse = sparse, plot = plot, directed = directed, wholegrowth=wholegrowth,growthfactor=growthfactor, num_measurements = num_measurements, verbose = verbose, plotx = plotx, ploty = ploty, ploty2 = ploty2, drawgraph = drawgraph, draw= draw)
 		return graph, randomgraph, data
 	else: 
-		graph, data = grow_graph(supermodular = supermodular, reverserandom=reverserandom, outgoingrandom = outgoingrandom, incomingrandom = incomingrandom, random_modular = random_modular, totalrandom = totalrandom, getgraph = getgraph, drawspectral = drawspectral, force_connected = force_connected, sparse = sparse, plot = plot, directed = directed, wholegrowth=wholegrowth,growthfactor=growthfactor, num_measurements = num_measurements, verbose = verbose, plotx = plotx, ploty = ploty, ploty2 = ploty2, drawgraph = drawgraph, draw= draw)
+		graph, data = grow_graph(supermodular = supermodular, preferential = preferential, reverserandom=reverserandom, outgoingrandom = outgoingrandom, incomingrandom = incomingrandom, random_modular = random_modular, totalrandom = totalrandom, getgraph = getgraph, drawspectral = drawspectral, force_connected = force_connected, sparse = sparse, plot = plot, directed = directed, wholegrowth=wholegrowth,growthfactor=growthfactor, num_measurements = num_measurements, verbose = verbose, plotx = plotx, ploty = ploty, ploty2 = ploty2, drawgraph = drawgraph, draw= draw)
 		return graph, data
 
 def get_nodename(node):
@@ -187,12 +187,18 @@ def load_graph_force_no_errors(csvfile,indexcol=False):
 	pickle.dump(nodes, open("nodes.p", "wb" ) )
 
 #this does all the growth and measurement stuff.
-def grow_graph(supermodular = False, preferential = False, reverserandom = False, outgoingrandom = False, incomingrandom = False, random_modular = False, totalrandom = False, force_connected = True, sparse = True, plot = False, directed = True, wholegrowth=False,growthfactor=100, num_measurements = 100, verbose = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modval',drawgraph = 'triangulated', draw= True, drawspectral = False, getgraph = True):
+def grow_graph(supermodular = False, preferential = True, reverserandom = False, outgoingrandom = False, incomingrandom = False, random_modular = False, totalrandom = False, force_connected = True, sparse = True, plot = False, directed = True, wholegrowth=False,growthfactor=100, num_measurements = 100, verbose = True, plotx = 'nodegrowth', ploty = 'maxclique', ploty2 = 'modval',drawgraph = 'triangulated', draw= True, drawspectral = False, getgraph = True):
 	"""
 	This function takes a graph that was loaded using load_graph and grows it,
 	meauring modularity and clique size. Modularity is found via a partition using 
 	the Louvain algorithm--Blondel, V.D. et al. Fast unfolding of communities in large networks. J. Stat. Mech 10008, 1-12(2008)--
 	and the Modularity value is Newman's Q--Newman, M.E.J. & Girvan, M. Finding and evaluating community structure in networks. Physical Review E 69, 26113(2004).
+
+	The growth method involes picking a random node to initialize the graph; nodes are then "turned on", one by one. When you turn on a node, you add the node to the graph and connect it to any other
+	nodes that it is connected to. We find a node (source node) to turn on by picking a node in the graph at random, and then we turn on one of its nieghbors that is not in the graph. The source
+	node is actually biased random to reflect the preferential attachement model, also know as The Barabasi Albert model, which is an algorithm for generating random scale-free networks using
+	a preferential attachment mechanism. Scale-free networks are widely observed in natural and human-made systems, including the Internet, the world wide web, citation networks, and some social networks.
+	You can make this random by making preferential = False. 
 
 	Some computations on very large graphs (over 10,000 nodes) take a long time. Because of this, if you get antsy and KeyboardInterrupt, all collected data will still be outputed.
 
@@ -209,6 +215,8 @@ def grow_graph(supermodular = False, preferential = False, reverserandom = False
 
 	num_measurements: int, How many times do you want to measure the graph? Default: 10
 
+	preferential, Boolean, if True, the source nodes are more likely to have higher degree during growth.
+	
 	force_connected: Boolean, Do you want the graph to remain connected as it grows? Default: True
 
 	directed: Boolean, Is your graph directed? Right now, this only supports directed graphs. Default: True
@@ -252,10 +260,7 @@ def grow_graph(supermodular = False, preferential = False, reverserandom = False
 		if draw == True:
 			plot = False
 		#you cannot plot and draw at the same time
-		if force_connected == True:
-			preferential =False
-		if preferential == True:
-			force_connected= False
+
 		# initialize database 
 		graph_db = database()
 
@@ -281,18 +286,18 @@ def grow_graph(supermodular = False, preferential = False, reverserandom = False
 
 		# here we figure out at what points to measure if the user wants a spare measumement or to measure every time a node is added. This speeds up big graph growths a lot! 
 		if sparse == True:
-		    sparsemeasurements = [growthfactor]
+		    sparsemeasurements = [2,3,4,5,6,7,8,9,growthfactor]
 		    measurements = np.logspace(1, (int(len(str(growthfactor)))), num=num_measurements)
 		    for x in measurements:
 		        sparsemeasurements.append(int(x))
 			for x in sparsemeasurements:
 				if x > (growthfactor+1):
 					sparsemeasurements.remove(x) #logspace is hard to build on the fly, so sometimes it has values over the growthfactor, so we remove them.
-				if x < 25:
+				if x < 2:
 					sparsemeasurements.remove(x) #sometimes no cliques exist in a graph this small.
 
 		else:
-			sparsemeasurements = range(25,growthfactor)
+			sparsemeasurements = range(2,growthfactor)
 		print 'Measuring graph at: ' + str(sparsemeasurements) 
 		# this will actually only work for directed graph because we are moralizing, but I want to leave the option for later. Perhaps I can just skip moralization for undirected graphs.
 		if directed:
@@ -313,21 +318,7 @@ def grow_graph(supermodular = False, preferential = False, reverserandom = False
 		
 		while nodegrowth < growthfactor: # make sure we aren't above how many nodes we want to measure in the graph    
 			#start off finding a node to add to the graph.
-			if force_connected == True: #this means that we must search for a new new based on finding an edge from a node in the graph to a node that is not in the graph yet.
-				try:
-					possiblenodes = graph.nodes() # get all nodes in graph.
-					fromnode = Random.choice(possiblenodes) #pick random node in graph to grow from(add one of its nieghbors). This uses the random module, not np.random
-					if verbose:
-					    print 'Using ' + str(fromnode) + ' to find new node'
-				except: #this is because you can't do random from one node at the start.
-				    fromnode = initial_node
-				    # graph.add_node(fromnode)
-				    if verbose:
-				        print 'using initial node'
-				        initial_used = initial_used+1
-				        if initial_used > 5:
-				        	1/0
-			elif preferential == True:
+			if preferential == True: 
 				try:
 					#create a list of nodes, but with nodes with higher degree occcuring more often.
 					possiblenodes = []
@@ -343,11 +334,25 @@ def grow_graph(supermodular = False, preferential = False, reverserandom = False
 					    print 'Using ' + str(fromnode) + ' to find new node'
 				except: #this is because you can't do random from one node at the start.
 				    fromnode = initial_node
-				    # graph.add_node(fromnode)
+				    graph.add_node(fromnode)
 				    if verbose:
 				        print 'using initial node'
 				        initial_used = initial_used+1
-				        if initial_used > 5:
+				        if initial_used > 50:
+				        	1/0
+			else: #this means that we must search for a new new based on finding an edge from a node in the graph to a node that is not in the graph yet.
+				try:
+					possiblenodes = graph.nodes() # get all nodes in graph.
+					fromnode = Random.choice(possiblenodes) #pick random node in graph to grow from(add one of its nieghbors). This uses the random module, not np.random
+					if verbose:
+					    print 'Using ' + str(fromnode) + ' to find new node'
+				except: #this is because you can't do random from one node at the start.
+				    fromnode = initial_node
+				    graph.add_node(fromnode)
+				    if verbose:
+				        print 'using initial node'
+				        initial_used = initial_used+1
+				        if initial_used > 50:
 				        	1/0
 
 			fromnode = nodes[fromnode] #get DB version of the node.
@@ -601,7 +606,7 @@ def grow_graph(supermodular = False, preferential = False, reverserandom = False
 				
 				istriangulated = False
 				tries = 0
-				while istriangulated == False and tries < 5: #sometimes oct2py takes too long to return I think
+				while istriangulated == False and tries < 3: #sometimes oct2py takes too long to return I think
 					try:
 					    moralized = nx.to_numpy_matrix(moralized,order)  # have to make it into matrix.
 					    triangulated, cliques, fill_ins = octave.triangulate(moralized,triorder)
@@ -609,28 +614,36 @@ def grow_graph(supermodular = False, preferential = False, reverserandom = False
 					    	random_moralized = nx.to_numpy_matrix(random_moralized,order) # have to make it into matrix.
 					    	random_triangulated, random_cliques, random_fill_ins = octave.triangulate(random_moralized, triorder)
 					    istriangulated = True
-					    tries = 5
+					    tries = 3
 					except:
 					    istriangulated = False
 					    print 'Octave Error, trying again!'
 					    tries = tries + 1 
 				#loop through cliques and get the size of them
-				cliquesizes = [] #empty array to keep clique sizes in
-				for x in cliques:
-				    size = len(x)
-				    cliquesizes.append(size)
-				maxclique = max(cliquesizes) #get the biggest clique
-				avgclique = np.mean(cliquesizes) # get the mean of the clique sizes
+				try:
+					cliquesizes = [] #empty array to keep clique sizes in
+					for x in cliques:
+					    size = len(x)
+					    cliquesizes.append(size)
+					maxclique = max(cliquesizes) #get the biggest clique
+					avgclique = np.mean(cliquesizes) # get the mean of the clique sizes
+				except:
+					maxclique = 0
+					avgclique = 0
 
 				#do the same for random graph cliques
 				if random == True:
-					random_cliquesizes = [] #empty array to keep clique sizes in
-					#loop through cliques and get the size of them
-					for x in random_cliques:
-						size = len(x)
-						random_cliquesizes.append(size)
-					random_maxclique = max(random_cliquesizes) #get the biggest clique
-					random_avgclique = np.mean(random_cliquesizes) # get the mean of the clique sizes
+					try:
+						random_cliquesizes = [] #empty array to keep clique sizes in
+						#loop through cliques and get the size of them
+						for x in random_cliques:
+							size = len(x)
+							random_cliquesizes.append(size)
+						random_maxclique = max(random_cliquesizes) #get the biggest clique
+						random_avgclique = np.mean(random_cliquesizes) # get the mean of the clique sizes
+					except:
+						random_maxclique = 0
+						random_avgclique = 0
 			
 				end_time = time() #get end time 
 				run_time = end_time - start_time #time how long all the took
